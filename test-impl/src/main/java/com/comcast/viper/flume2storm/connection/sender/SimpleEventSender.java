@@ -15,24 +15,28 @@
  */
 package com.comcast.viper.flume2storm.connection.sender;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
 import com.comcast.viper.flume2storm.connection.receptor.SimpleEventReceptor;
-import com.comcast.viper.flume2storm.connection.sender.EventSender;
 import com.comcast.viper.flume2storm.event.F2SEvent;
 import com.comcast.viper.flume2storm.location.SimpleServiceProvider;
 import com.comcast.viper.flume2storm.utility.circular.CircularList;
 import com.comcast.viper.flume2storm.utility.circular.ReadWriteCircularList;
 
 /**
+ * A simple implementation of {@link EventSender} for test purpose
  */
 public class SimpleEventSender extends SimpleServiceProvider implements EventSender<SimpleConnectionParameters> {
   private static final long serialVersionUID = -6829876645658796790L;
-  private static final Random random = new Random();
+  protected static final Logger LOG = LoggerFactory.getLogger(SimpleEventSender.class);
   protected final CircularList<SimpleEventReceptor> receptors;
+  protected final EventSenderStats stats;
 
   /**
    * @param connectionParameters
@@ -41,6 +45,8 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
   public SimpleEventSender(SimpleConnectionParameters connectionParameters) {
     super(connectionParameters);
     receptors = new ReadWriteCircularList<SimpleEventReceptor>();
+    stats = new EventSenderStats(connectionParameters.getId());
+    LOG.debug("Created with {}", connectionParameters);
   }
 
   /**
@@ -48,6 +54,7 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
    */
   @Override
   public boolean start() {
+    LOG.info("Sender '{}' started", getConnectionParameters().getId());
     SimpleEventSenderRouter.getInstance().add(this);
     return true;
   }
@@ -57,6 +64,7 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
    */
   @Override
   public boolean stop() {
+    LOG.info("Sender '{}' stopped", getConnectionParameters().getId());
     SimpleEventSenderRouter.getInstance().remove(this);
     return true;
   }
@@ -68,7 +76,9 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
    *          The receptor that is connecting
    */
   public void connect(SimpleEventReceptor receptor) {
-    receptors.add(receptor);
+    LOG.info("Sender '{}' received connection from {}", getConnectionParameters().getId(), receptor);
+    if (receptors.add(receptor))
+      stats.incrClients();
   }
 
   /**
@@ -78,15 +88,9 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
    *          The receptor that is connecting
    */
   public void disconnect(SimpleEventReceptor receptor) {
-    receptors.remove(receptor);
-  }
-
-  /**
-   * @see com.comcast.viper.flume2storm.connection.sender.EventSender#getNbReceptors()
-   */
-  @Override
-  public int getNbReceptors() {
-    return receptors.size();
+    LOG.info("Sender '{}' received disconnection from {}", getConnectionParameters().getId(), receptor);
+    if (receptors.remove(receptor))
+      stats.decrClients();
   }
 
   /**
@@ -96,6 +100,8 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
    */
   @Override
   public int send(List<F2SEvent> events) {
+    LOG.trace("Sender '{}' sending {} events", getConnectionParameters().getId(), events.size());
+    stats.incrEventsIn(events.size());
     int result = 0;
     for (F2SEvent f2sEvent : events) {
       SimpleEventReceptor receptor = receptors.getNext();
@@ -106,11 +112,23 @@ public class SimpleEventSender extends SimpleServiceProvider implements EventSen
       receptor.receive(f2sEvent);
       result++;
     }
+    stats.incrEventsOut(result);
+    LOG.debug("Sender '{}' sent {} events successfully", getConnectionParameters().getId(), result);
     return result;
   }
 
-  @Override
+  /**
+   * @see com.comcast.viper.flume2storm.connection.sender.EventSender#getStats()
+   */
+  public EventSenderStats getStats() {
+    return stats;
+  }
+
+  /**
+   * @see com.comcast.viper.flume2storm.location.SimpleServiceProvider#toString()
+   */
   public String toString() {
-    return "SimpleEventSender [getId()=" + getId() + ", getConnectionParameters()=" + getConnectionParameters() + "]";
+    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+        .append("connectionParameters", getConnectionParameters()).append("stats", stats).build();
   }
 }

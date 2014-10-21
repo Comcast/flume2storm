@@ -17,19 +17,19 @@ package com.comcast.viper.flume2storm.location;
 
 import org.apache.commons.configuration.Configuration;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
+
 /**
  * Loads Simple Service Provider from an Apache Configuration
  */
-public class SimpleServiceProviderConfigurationLoader implements ServiceProviderConfigurationLoader<SimpleServiceProvider> {
-	public static final String HOSTNAME = "hostname";
-	public static final String PORT = "port";
-
-	/**
-	 * @see com.comcast.viper.flume2storm.location.ServiceProviderConfigurationLoader#load(org.apache.commons.configuration.Configuration)
-	 */
-	public SimpleServiceProvider load(Configuration config) {
-		String hostname = config.getString(HOSTNAME);
-		Integer port = config.getInt(PORT);
-		return new SimpleServiceProvider(hostname, port);
-	}
+public class SimpleServiceProviderConfigurationLoader implements
+    ServiceProviderConfigurationLoader<SimpleServiceProvider> {
+  /**
+   * @throws F2SConfigurationException
+   * @see com.comcast.viper.flume2storm.location.ServiceProviderConfigurationLoader#load(org.apache.commons.configuration.Configuration)
+   */
+  public SimpleServiceProvider load(Configuration config) throws F2SConfigurationException {
+    return new SimpleServiceProvider(SimpleConnectionParameters.from(config));
+  }
 }

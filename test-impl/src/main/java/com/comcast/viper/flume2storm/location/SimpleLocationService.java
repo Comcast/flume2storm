@@ -15,11 +15,27 @@
  */
 package com.comcast.viper.flume2storm.location;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * A simple implementation of LocationService that stores data in memory for
- * test/example purpose
+ * A simple implementation of {@link LocationService} that stores data in memory
+ * for test purpose
  */
 public class SimpleLocationService extends AbstractLocationService<SimpleServiceProvider> {
+  private static final SimpleLocationService instance = new SimpleLocationService();
+  protected static final Logger LOG = LoggerFactory.getLogger(SimpleLocationService.class);
+
+  /**
+   * @return The instance of the {@link SimpleLocationService}
+   */
+  public static SimpleLocationService getInstance() {
+    return instance;
+  }
+
+  /**
+   * Default constructor
+   */
   public SimpleLocationService() {
   }
 
@@ -27,6 +43,7 @@ public class SimpleLocationService extends AbstractLocationService<SimpleService
    * @see com.comcast.viper.flume2storm.location.LocationService#start()
    */
   public boolean start() {
+    LOG.info("Started");
     return true;
   }
 
@@ -34,6 +51,7 @@ public class SimpleLocationService extends AbstractLocationService<SimpleService
    * @see com.comcast.viper.flume2storm.location.LocationService#stop()
    */
   public boolean stop() {
+    LOG.info("Stopped");
     return true;
   }
 
@@ -41,6 +59,7 @@ public class SimpleLocationService extends AbstractLocationService<SimpleService
    * @see com.comcast.viper.flume2storm.location.LocationService#register(com.comcast.viper.flume2storm.location.ServiceProvider)
    */
   public void register(SimpleServiceProvider serviceProvider) {
+    LOG.info("Registered {}", serviceProvider);
     serviceProviderManager.add(serviceProvider);
   }
 
@@ -48,6 +67,7 @@ public class SimpleLocationService extends AbstractLocationService<SimpleService
    * @see com.comcast.viper.flume2storm.location.LocationService#unregister(com.comcast.viper.flume2storm.location.ServiceProvider)
    */
   public void unregister(SimpleServiceProvider serviceProvider) {
+    LOG.info("Unregistered {}", serviceProvider);
     serviceProviderManager.remove(serviceProvider);
   }
 

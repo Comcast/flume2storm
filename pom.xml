@@ -24,18 +24,20 @@
 
 	<name>flume2storm-parent</name>
 	<description>Parent POM of the Flume2Storm project</description>
+	<url>https://github.com/Comcast/flume2storm</url>
 	<inceptionYear>2014</inceptionYear>
 
         <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.source.version>1.6</java.source.version>
-		
-		<license.header.location>license.header</license.header.location>
+		<java.source.version>1.7</java.source.version>
+		<f2s.basedir>${project.basedir}</f2s.basedir>
 
-                <log4j.version>1.2.17</log4j.version>
-                <slf4j.version>1.6.1</slf4j.version>
+                <logback.version>1.0.13</logback.version>
+                <slf4j.version>1.7.7</slf4j.version>
                 <guava.version>13.0.1</guava.version>
 		<jodatime.version>2.1</jodatime.version>
+		<commons-configuration.version>1.6</commons-configuration.version>
+		<commons-lang.version>3.3.1</commons-lang.version>
 		<assertj.version>1.6.1</assertj.version>
                 <junit.version>4.9</junit.version>
         </properties>
@@ -44,6 +46,7 @@
 		<!-- API and utility -->
 		<module>core</module>
 		<module>utility</module>
+		<module>kryo-utils</module>
 		<module>test-impl</module>
 		<!-- Implementations -->
 		<module>static-location-service</module>
@@ -52,6 +55,7 @@
 		<!-- Finally -->
 		<module>storm-sink</module>
 		<module>flume-spout</module>
+		<module>integration-tests</module>
 	</modules>
 
 	<organization>
@@ -66,6 +70,12 @@
 		</license>
 	</licenses>
 
+	<scm>
+		<url>scm:git:https://github.com/Comcast/flume2storm</url>
+		<connection>scm:git:https://github.com/Comcast/flume2storm</connection>
+		<developerConnection>scm:git:https://github.com/Comcast/flume2storm</developerConnection>
+	</scm>
+
 	<developers>
 		<developer>
 			<name>Gabriel Commeau</name>
@@ -78,6 +88,11 @@
 		<repository>
 			<id>repo1.maven.org</id>
 			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+		<!-- Storm and KryoNet -->
+		<repository>
+			<id>clojars.org</id>
+			<url>http://clojars.org/repo</url>
 		</repository>
 	</repositories>
 
@@ -92,28 +107,17 @@
 		</pluginRepository>
 	</pluginRepositories>
 
-	<!-- TODO scm>
-		<url>scm:git:${git.url}</url>
-		<connection>scm:git:${git.url}</connection>
-		<developerConnection>scm:git:${git.url}</developerConnection>
-	</scm-->
-
         <dependencyManagement>
                 <dependencies>
-                        <dependency>
-                                <groupId>log4j</groupId>
-                                <artifactId>log4j</artifactId>
-                                <version>${log4j.version}</version>
-                        </dependency>
                         <dependency>
                                 <groupId>org.slf4j</groupId>
                                 <artifactId>slf4j-api</artifactId>
                                 <version>${slf4j.version}</version>
                         </dependency>
                         <dependency>
-                                <groupId>org.slf4j</groupId>
-                                <artifactId>slf4j-log4j12</artifactId>
-                                <version>${slf4j.version}</version>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback.version}</version>
                         </dependency>
                         <dependency>
                                 <groupId>com.google.guava</groupId>
@@ -124,6 +128,16 @@
 				<groupId>joda-time</groupId>
 				<artifactId>joda-time</artifactId>
 				<version>${jodatime.version}</version>
+			</dependency>
+			<dependency>
+			    <groupId>commons-configuration</groupId>
+			    <artifactId>commons-configuration</artifactId>
+			    <version>${commons-configuration.version}</version>
+			</dependency>
+			<dependency>
+			    <groupId>org.apache.commons</groupId>
+			    <artifactId>commons-lang3</artifactId>
+			    <version>${commons-lang.version}</version>
 			</dependency>
                         <dependency>
                                 <groupId>junit</groupId>
@@ -147,8 +161,8 @@
                         <artifactId>slf4j-api</artifactId>
                 </dependency>
                 <dependency>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
                 </dependency>
                 <!-- Test -->
                 <dependency>
@@ -178,7 +192,6 @@
 					<configuration>
 						<source>${java.source.version}</source>
 						<target>${java.source.version}</target>
-						<maxmem>2000m</maxmem>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -190,59 +203,125 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.4</version>
+					<configuration>
+						<archive>
+							<manifest>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							</manifest>
+						</archive>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-assembly-plugin</artifactId>
-					<version>2.4</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-shade-plugin</artifactId>
-					<version>2.1</version>
-					<executions>
-						<execution>
-							<phase>package</phase>
-							<goals>
-								<goal>shade</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>com.mycila</groupId>
-					<artifactId>license-maven-plugin</artifactId>
-					<version>2.6</version>
+					<version>2.4.1</version>
 					<configuration>
-						<header>${license.header.location}</header>
-						<properties>
-							<owner>${project.organization.name}</owner>
-						</properties>
-						<failIfMissing>false</failIfMissing>
-						<strictCheck>true</strictCheck>
-						<excludes>
-							<exclude>LICENSE</exclude>
-							<exclude>**/*.config</exclude>
-							<exclude>**/README*</exclude>
-							<exclude>**/license.header</exclude>
-							<exclude>src/main/resources/**</exclude>
-							<exclude>src/test/resources/**</exclude>
-						</excludes>
+						<archive>
+							<manifest>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							</manifest>
+						</archive>
 					</configuration>
 					<executions>
 						<execution>
+							<id>make-assembly</id>
+							<phase>package</phase>
 							<goals>
-								<goal>check</goal>
+								<goal>single</goal>
 							</goals>
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+						<filesets>
+							<fileset>
+								<directory>src/test/zk</directory>
+							</fileset>
+						</filesets>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.4.2</version>
+					<dependencies>
+						<dependency>
+							<groupId>org.apache.maven.scm</groupId>
+							<artifactId>maven-scm-provider-gitexe</artifactId>
+							<version>1.9.2</version>
+						</dependency>
+					</dependencies>
+				</plugin>
 			</plugins>
 		</pluginManagement>
+
 		<plugins>
 			<plugin>
 				<groupId>com.mycila</groupId>
 				<artifactId>license-maven-plugin</artifactId>
+				<version>2.6</version>
+				<configuration>
+					<header>${f2s.basedir}/resources/license.header</header>
+					<properties>
+						<owner>${project.organization.name}</owner>
+					</properties>
+					<failIfMissing>false</failIfMissing>
+					<strictCheck>true</strictCheck>
+					<excludes>
+						<exclude>LICENSE</exclude>
+						<exclude>NOTICE</exclude>
+						<exclude>resources/*</exclude>
+						<exclude>.recommenders/**/*</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.3</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.1</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<quiet>true</quiet>
+							<includeDependencySources>true</includeDependencySources>
+							<dependencySourceIncludes>
+								<dependencySourceInclude>com.comcast.viper.flume2storm*</dependencySourceInclude>
+							</dependencySourceIncludes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

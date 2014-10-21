@@ -18,24 +18,22 @@ package com.comcast.viper.flume2storm.spout;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 
 import junit.framework.Assert;
 
-import org.apache.commons.configuration.CombinedConfiguration;
+import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationUtils;
-import org.apache.commons.configuration.MapConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.ILocalCluster;
@@ -44,114 +42,75 @@ import backtype.storm.testing.MkClusterParam;
 import backtype.storm.testing.TestJob;
 import backtype.storm.topology.TopologyBuilder;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.F2SEventSerializer;
-import com.comcast.viper.flume2storm.KryoNetParameters;
-import com.comcast.viper.flume2storm.connection.KryoNetConnectionParameters;
+import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
+import com.comcast.viper.flume2storm.connection.receptor.SimpleEventReceptorFactory;
+import com.comcast.viper.flume2storm.connection.sender.SimpleEventSender;
 import com.comcast.viper.flume2storm.event.F2SEvent;
-import com.comcast.viper.flume2storm.event.F2SEventComparator;
 import com.comcast.viper.flume2storm.event.F2SEventFactory;
-import com.comcast.viper.flume2storm.location.DynamicLocationService;
-import com.comcast.viper.flume2storm.location.DynamicLocationServiceConfiguration;
-import com.comcast.viper.flume2storm.location.DynamicLocationServiceFactory;
-import com.comcast.viper.flume2storm.location.KryoNetServiceProvider;
-import com.comcast.viper.flume2storm.location.KryoNetServiceProviderSerialization;
-import com.comcast.viper.flume2storm.sender.KryoNetEventSender;
+import com.comcast.viper.flume2storm.location.SimpleLocationService;
+import com.comcast.viper.flume2storm.location.SimpleLocationServiceFactory;
+import com.comcast.viper.flume2storm.location.SimpleServiceProvider;
+import com.comcast.viper.flume2storm.location.SimpleServiceProviderSerialization;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
-import com.comcast.viper.flume2storm.zookeeper.ZkServerTestUtils;
-import com.comcast.viper.flume2storm.zookeeper.ZkTestUtils;
 
+/**
+ * Test {@link FlumeSpout}
+ */
 public class FlumeSpoutTest {
-  protected static final int TEST_TIMEOUT = 20000;
+  protected static final Logger LOG = LoggerFactory.getLogger(FlumeSpoutTest.class);
+  protected static final int TEST_TIMEOUT = 120000;
   private static final int BATCH_SIZE = 100;
   private static final int NB_EVENTS = 150 * BATCH_SIZE;
-  private static MapConfiguration kryoConfig;
-  private static MapConfiguration locationServiceConfig;
-  private static CombinedConfiguration flumeSpoutConfig;
+  private static Configuration flumeSpoutConfig;
   private static Configuration eventSender1Config;
   private static Configuration eventSender2Config;
 
-  private KryoNetEventSender eventSender1;
-  private KryoNetEventSender eventSender2;
-  private DynamicLocationService<KryoNetServiceProvider> locationService;
-  private SortedSet<F2SEvent> eventsToSent;
-
-  private static SortedSet<F2SEvent> generateRandomEvents(int nbEvents) {
-    final SortedSet<F2SEvent> result = new TreeSet<F2SEvent>(new F2SEventComparator());
-    while (result.size() != nbEvents) {
-      result.add(F2SEventFactory.getInstance().createRandomWithHeaders());
-    }
-    return result;
-  }
+  protected SimpleLocationService locationService;
+  protected SimpleEventSender eventSender1;
+  protected SimpleEventSender eventSender2;
+  protected SortedSet<F2SEvent> eventsToSent;
 
   @BeforeClass
   public static void configure() {
-    // Global KryoNet configuration
-    kryoConfig = new MapConfiguration(new HashMap<String, Object>());
-    kryoConfig.addProperty(KryoNetParameters.CONNECTION_TIMEOUT, 500);
-    kryoConfig.addProperty(KryoNetParameters.RECONNECTION_DELAY, 1000);
-    kryoConfig.addProperty(KryoNetParameters.TERMINATION_TO, 2000);
-
-    // Location Service configuration
-    locationServiceConfig = new MapConfiguration(new HashMap<String, Object>());
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.CONNECTION_STRING, ZkTestUtils.HOST + ":"
-        + ZkTestUtils.PORT);
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.SESSION_TIMEOUT, 2000);
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.CONNECTION_TIMEOUT, 500);
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.RECONNECTION_DELAY, 1000);
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.TERMINATION_TIMEOUT, 2000);
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.BASE_PATH, "/unitTest");
-    locationServiceConfig.addProperty(DynamicLocationServiceConfiguration.SERVICE_NAME, "ut");
-
     // First Event Sender configuration
-    eventSender1Config = new MapConfiguration(new HashMap<String, Object>());
-    eventSender1Config.addProperty(KryoNetConnectionParameters.HOSTNAME, "localhost");
-    eventSender1Config.addProperty(KryoNetConnectionParameters.PORT, 7001);
+    eventSender1Config = new BaseConfiguration();
+    eventSender1Config.addProperty(SimpleConnectionParameters.HOSTNAME, "localhost");
+    eventSender1Config.addProperty(SimpleConnectionParameters.PORT, 7001);
 
     // Second Event Sender configuration
-    eventSender2Config = new MapConfiguration(new HashMap<String, Object>());
-    eventSender2Config.addProperty(KryoNetConnectionParameters.HOSTNAME, "localhost");
-    eventSender2Config.addProperty(KryoNetConnectionParameters.PORT, 7002);
+    eventSender2Config = new BaseConfiguration();
+    eventSender2Config.addProperty(SimpleConnectionParameters.HOSTNAME, "localhost");
+    eventSender2Config.addProperty(SimpleConnectionParameters.PORT, 7002);
 
     // Flume Spout configuration
-    flumeSpoutConfig = new CombinedConfiguration();
-    flumeSpoutConfig.addConfiguration(kryoConfig, "Kryo Configuration", KryoNetParameters.CONFIG_BASE_NAME);
-    flumeSpoutConfig.addConfiguration(locationServiceConfig, "Location Service Configuration",
-        DynamicLocationServiceFactory.CONFIG_BASE_NAME);
-    ConfigurationUtils.dump(flumeSpoutConfig, System.out);
+    flumeSpoutConfig = new BaseConfiguration();
+    flumeSpoutConfig.addProperty(FlumeSpoutConfiguration.LOCATION_SERVICE_FACTORY_CLASS,
+        SimpleLocationServiceFactory.class.getName());
+    flumeSpoutConfig.addProperty(FlumeSpoutConfiguration.SERVICE_PROVIDER_SERIALIZATION_CLASS,
+        SimpleServiceProviderSerialization.class.getName());
+    flumeSpoutConfig.addProperty(FlumeSpoutConfiguration.EVENT_RECEPTOR_FACTORY_CLASS,
+        SimpleEventReceptorFactory.class.getName());
   }
 
   @Before
-  public void setup() throws Exception {
-    // Creating Zk Cluster
-    // TODO: Need a way to change the JMX port, as Storm will kick off
-    // another instance which conflicts with this one
-    ZkServerTestUtils.startZkServer();
-    ZkServerTestUtils.waitZkServerOn();
-
-    // Creating Dynamic location service
-    DynamicLocationServiceConfiguration config = DynamicLocationServiceConfiguration.from(locationServiceConfig);
-    locationService = new DynamicLocationService<KryoNetServiceProvider>(config,
-        new KryoNetServiceProviderSerialization());
+  public void setup() throws F2SConfigurationException {
+    // Creating and starting location service
+    locationService = new SimpleLocationServiceFactory().create(null, null);
     locationService.start();
-    TestUtils.waitFor(new TestCondition() {
-      @Override
-      public boolean evaluate() {
-        return locationService.isConnected();
-      }
-    }, TEST_TIMEOUT);
 
     // Creating the KryoNet servers
-    KryoNetParameters knParams = KryoNetParameters.from(kryoConfig);
-    eventSender1 = new KryoNetEventSender(KryoNetConnectionParameters.from(eventSender1Config), knParams);
+    eventSender1 = new SimpleEventSender(SimpleConnectionParameters.from(eventSender1Config));
     eventSender1.start();
     locationService.register(eventSender1);
-    eventSender2 = new KryoNetEventSender(KryoNetConnectionParameters.from(eventSender2Config), knParams);
+    eventSender2 = new SimpleEventSender(SimpleConnectionParameters.from(eventSender2Config));
     eventSender2.start();
     locationService.register(eventSender2);
 
     // Generating random events
-    eventsToSent = generateRandomEvents(NB_EVENTS * 2);
+    eventsToSent = F2SEventFactory.getInstance().generateRandomEvents(NB_EVENTS * 2);
   }
 
   @After
@@ -164,12 +123,6 @@ public class FlumeSpoutTest {
 
     // Stopping location service
     locationService.stop();
-
-    // Stopping ZkServer
-    ZkServerTestUtils.stopZkServer();
-    System.out.println("Server stopped.");
-    ZkServerTestUtils.waitZkServerOff();
-    System.out.println("All done.");
   }
 
   /**
@@ -178,16 +131,19 @@ public class FlumeSpoutTest {
   @Test
   public void testIt() throws Exception {
     final MkClusterParam mkClusterParam = new MkClusterParam();
-    mkClusterParam.setSupervisors(1);
-    mkClusterParam.setPortsPerSupervisor(4);
-    Testing.withSimulatedTimeLocalCluster(new TestJob() {
+    mkClusterParam.setSupervisors(2);
+    mkClusterParam.setPortsPerSupervisor(2);
+    Config daemonConf = new Config();
+    daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, false);
+    mkClusterParam.setDaemonConf(daemonConf);
+    Testing.withLocalCluster(new TestJob() {
       @Override
       public void run(final ILocalCluster cluster) throws Exception {
         // Building the test topology
         final TopologyBuilder builder = new TopologyBuilder();
         Set<F2SEventEmitter> eventEmitters = new HashSet<F2SEventEmitter>();
         eventEmitters.add(new BasicF2SEventEmitter());
-        FlumeSpout<KryoNetConnectionParameters, KryoNetServiceProvider> flumeSpout = new FlumeSpout<KryoNetConnectionParameters, KryoNetServiceProvider>(
+        FlumeSpout<SimpleConnectionParameters, SimpleServiceProvider> flumeSpout = new FlumeSpout<SimpleConnectionParameters, SimpleServiceProvider>(
             eventEmitters, flumeSpoutConfig);
         builder.setSpout("FlumeSpout", flumeSpout, 2);
         final TestBolt psBolt = new TestBolt();
@@ -205,14 +161,16 @@ public class FlumeSpoutTest {
           public void run() {
             try {
               // Waiting that topology is ready
+              LOG.info("Waiting that receptors connect...");
               if (!TestUtils.waitFor(new TestCondition() {
                 @Override
                 public boolean evaluate() {
-                  return eventSender1.getStats().getNbClients() > 0 && eventSender2.getStats().getNbClients() > 0;
+                  return eventSender1.getStats().getNbClients() == 2 && eventSender2.getStats().getNbClients() == 2;
                 }
-              }, TEST_TIMEOUT, 50)) {
+              }, TEST_TIMEOUT)) {
                 Assert.fail("Receptors failed to connect to senders in time (" + TEST_TIMEOUT + " ms)");
               }
+              LOG.info("Receptors connected... sending events");
               // Load balancing events between the 2 event senders
               int batchNb = 0;
               List<F2SEvent> batch = null;
@@ -223,12 +181,12 @@ public class FlumeSpoutTest {
                 }
                 batch.add(event);
                 if (batch.size() == BATCH_SIZE) {
-                  KryoNetEventSender eventSender = batchNb % 2 == 0 ? eventSender1 : eventSender2;
-                  System.out.println("Sending batch!");
+                  SimpleEventSender eventSender = batchNb % 2 == 0 ? eventSender1 : eventSender2;
                   eventSender.send(batch);
                   batch = null;
                 }
               }
+              LOG.info("Sent {} events", eventsToSent.size());
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
@@ -237,16 +195,15 @@ public class FlumeSpoutTest {
         senderThread.start();
 
         // Waiting that it's done
-        final long t0 = System.currentTimeMillis();
-        while (MemoryStorage.getInstance().getReceivedEvents().size() < NB_EVENTS * 2
-            && (System.currentTimeMillis() - t0) < TEST_TIMEOUT) {
-          Testing.advanceClusterTime(cluster, 1);
-          System.out.println("Received so far: " + MemoryStorage.getInstance().getReceivedEvents().size());
-          Thread.sleep(100);
+        if (!TestUtils.waitFor(new TestCondition() {
+          @Override
+          public boolean evaluate() {
+            LOG.debug("Received so far: " + MemoryStorage.getInstance().getReceivedEvents().size());
+            return MemoryStorage.getInstance().getReceivedEvents().size() >= NB_EVENTS * 2;
+          }
+        }, TEST_TIMEOUT)) {
+          Assert.fail("Failed to receive all events in time (" + TEST_TIMEOUT + " ms)");
         }
-        System.out.println("almost done....");
-        senderThread.join(TEST_TIMEOUT);
-        System.out.println("senderthread terminated....");
 
         // Testing results:
         // 1 - Each sender have sent half of the events

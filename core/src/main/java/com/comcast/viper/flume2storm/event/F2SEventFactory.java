@@ -18,11 +18,13 @@ package com.comcast.viper.flume2storm.event;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.RandomStringUtils;
 
 /**
- * Flume2Storm event factory.
+ * Flume2Storm event factory
  */
 public class F2SEventFactory {
   static final String DEFAULT_CHARACTER_SET_NAME = "UTF-8";
@@ -47,7 +49,7 @@ public class F2SEventFactory {
    * @return The newly created Flume2Storm event
    */
   public F2SEvent create(byte[] body) {
-    return new F2SEvent(null, null, body);
+    return new F2SEvent(null, body);
   }
 
   /**
@@ -56,7 +58,7 @@ public class F2SEventFactory {
    * @return The newly created Flume2Storm event
    */
   public F2SEvent create(String body) {
-    return new F2SEvent(null, null, body.getBytes(DEFAULT_CHARACTER_SET));
+    return new F2SEvent(null, body.getBytes(DEFAULT_CHARACTER_SET));
   }
 
   /**
@@ -67,7 +69,7 @@ public class F2SEventFactory {
    * @return The newly created Flume2Storm event
    */
   public F2SEvent create(byte[] body, Map<String, String> headers) {
-    return new F2SEvent(headers, null, body);
+    return new F2SEvent(headers, body);
   }
 
   /**
@@ -87,8 +89,20 @@ public class F2SEventFactory {
     for (int i = 0; i < random.nextInt(5); i++) {
       builder.header("H" + i, RandomStringUtils.randomAlphabetic(random.nextInt(64) + 1));
     }
-    builder.body(RandomStringUtils.randomAlphanumeric(random.nextInt(128) + 1)
-        .getBytes());
+    builder.body(RandomStringUtils.randomAlphanumeric(random.nextInt(128) + 1).getBytes());
     return builder.get();
+  }
+
+  /**
+   * @param nbEvents
+   *          The number of events to create
+   * @return A {@link SortedSet} of randomly generated {@link F2SEvent}
+   */
+  public SortedSet<F2SEvent> generateRandomEvents(int nbEvents) {
+    final SortedSet<F2SEvent> result = new TreeSet<F2SEvent>(new F2SEventComparator());
+    while (result.size() != nbEvents) {
+      result.add(F2SEventFactory.getInstance().createRandomWithHeaders());
+    }
+    return result;
   }
 }

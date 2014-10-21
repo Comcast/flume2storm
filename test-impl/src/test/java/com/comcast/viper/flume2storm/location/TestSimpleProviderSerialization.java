@@ -19,10 +19,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
-
 /**
- * Unit test for Service provider serialization
+ * Unit test for {@link SimpleServiceProviderSerialization}
  */
 public final class TestSimpleProviderSerialization {
   /**

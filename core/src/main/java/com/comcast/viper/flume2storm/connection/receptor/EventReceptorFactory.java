@@ -21,11 +21,12 @@ import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters;
 
 /**
- * Interface to build an Event Receptor. It follows the abstract factory design
- * pattern.
+ * Interface to build an {@link EventReceptor}. It follows the abstract factory
+ * design pattern. Implementation of this factory must have a no-argument
+ * constructor.
  * 
  * @param <CP>
- *          The Connection Parameters class
+ *          The {@link ConnectionParameters} class
  */
 public interface EventReceptorFactory<CP extends ConnectionParameters> {
   /**

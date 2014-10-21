@@ -20,18 +20,18 @@ import org.apache.commons.configuration.Configuration;
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 
 /**
+ * A simple implementation of the {@link LocationServiceFactory} for test
+ * purpose
  */
 public class SimpleLocationServiceFactory implements LocationServiceFactory<SimpleServiceProvider> {
-  private static final SimpleLocationService simpleLocationService = new SimpleLocationService();
-
   /**
    * @see com.comcast.viper.flume2storm.location.LocationServiceFactory#create(org.apache.commons.configuration.Configuration,
    *      com.comcast.viper.flume2storm.location.ServiceProviderSerialization)
    */
   @Override
-  public LocationService<SimpleServiceProvider> create(Configuration config,
+  public SimpleLocationService create(Configuration config,
       ServiceProviderSerialization<SimpleServiceProvider> serviceProviderSerialization)
       throws F2SConfigurationException {
-    return simpleLocationService;
+    return SimpleLocationService.getInstance();
   }
 }

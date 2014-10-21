@@ -21,8 +21,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * Compares 2 Flume2Storm events, by sorting them by timestamp first, then by
- * their actual content.
+ * Compares 2 Flume2Storm events, by sorting them by their actual content.
  */
 public class F2SEventComparator implements Comparator<F2SEvent> {
   /**
@@ -31,7 +30,6 @@ public class F2SEventComparator implements Comparator<F2SEvent> {
   public int compare(F2SEvent e1, F2SEvent e2) {
     Preconditions.checkNotNull(e1, "Cannot compare null Flume2Storm events");
     Preconditions.checkNotNull(e2, "Cannot compare null Flume2Storm events");
-    return ComparisonChain.start().compare(e1.getTimestamp(), e2.getTimestamp())
-        .compare(new String(e1.getBody()), new String(e2.getBody())).result();
+    return ComparisonChain.start().compare(new String(e1.getBody()), new String(e2.getBody())).result();
   }
 }

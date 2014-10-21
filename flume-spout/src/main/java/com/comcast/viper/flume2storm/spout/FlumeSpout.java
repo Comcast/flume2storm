@@ -15,9 +15,10 @@
  */
 package com.comcast.viper.flume2storm.spout;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import com.comcast.viper.flume2storm.location.LocationServiceFactory;
 import com.comcast.viper.flume2storm.location.ServiceListener;
 import com.comcast.viper.flume2storm.location.ServiceProvider;
 import com.comcast.viper.flume2storm.location.ServiceProviderSerialization;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * A Storm spout that ingests data from Flume, via the Flume2Storm connector.
@@ -79,7 +81,7 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
      */
     @Override
     public void onProviderRemoved(SP serviceProvider) {
-      LOG.info("Removed provider: {}", serviceProvider);
+      // The associated EventReceptor is not removed at this point
     }
 
     /**
@@ -93,7 +95,16 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
             configuration.get());
         LOG.debug("Adding event receptor: {}", eventReceptor);
         eventReceptor.start();
-        eventReceptors.put(serviceProvider.getId(), eventReceptor);
+        while (!eventReceptor.getStats().isConnected()) {
+          LOG.debug("Receptor not started... waiting...");
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+        }
+        eventReceptors.put(serviceProvider.getConnectionParameters().getId(), eventReceptor);
       } catch (F2SConfigurationException e) {
         LOG.error("Failed to add service provider: " + serviceProvider, e);
       }
@@ -113,8 +124,22 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
   public FlumeSpout(final Set<F2SEventEmitter> emitters, final Configuration configuration)
       throws F2SConfigurationException {
     this.emitters = emitters;
-    eventReceptors = new HashMap<String, EventReceptor<CP>>();
+    eventReceptors = new ConcurrentHashMap<String, EventReceptor<CP>>();
     this.configuration = FlumeSpoutConfiguration.from(configuration);
+  }
+
+  /**
+   * Convenience constructor
+   * 
+   * @param emitter
+   *          One {@link F2SEventEmitter}
+   * @param configuration
+   *          The configuration for the spout
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
+  public FlumeSpout(final F2SEventEmitter emitter, final Configuration configuration) throws F2SConfigurationException {
+    this(ImmutableSet.of(emitter), configuration);
   }
 
   /**
@@ -163,11 +188,8 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
     LOG.info("Clossed");
   }
 
-  // This is probably not needed, because we don't remove the service provider
-  // if the connection to ZK fails:
-  @Deprecated
-  protected void removeServiceProvider(SP serviceProvider) {
-    EventReceptor<CP> eventReceptor = eventReceptors.remove(serviceProvider.getId());
+  protected void removeServiceProvider(String serviceProviderId) {
+    EventReceptor<CP> eventReceptor = eventReceptors.remove(serviceProviderId);
     if (eventReceptor != null) {
       eventReceptor.stop();
       LOG.debug("Removed service provider: {}", eventReceptor);
@@ -183,17 +205,21 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
       if (collector != null) {
         // Emit any events we have queued
         for (final EventReceptor<CP> eventReceptor : eventReceptors.values()) {
-          for (final F2SEvent event : eventReceptor.getEvents()) {
+          List<F2SEvent> events = eventReceptor.getEvents();
+          for (final F2SEvent event : events) {
             LOG.trace("Received F2S event: {}", event);
             for (final F2SEventEmitter emitter : emitters) {
               emitter.emitEvent(event, collector);
             }
           }
-          if (!eventReceptor.isConnected()) {
-            if (!locationService.getServiceProviders().contains(eventReceptor)) {
-              LOG.debug("Removing service provider: {}", eventReceptor);
-              eventReceptors.remove(eventReceptor);
-            }
+          // Removing EventReceptor if:
+          // - it's disconnected from the EventSender
+          // - the associated ServiceProvider is not registered
+          // - it does not have queued up events
+          if (!eventReceptor.getStats().isConnected()
+              && !locationService.containsServiceProvider(eventReceptor.getConnectionParameters().getId())
+              && events.isEmpty()) {
+            removeServiceProvider(eventReceptor.getConnectionParameters().getId());
           }
         }
       }
@@ -201,6 +227,7 @@ public class FlumeSpout<CP extends ConnectionParameters, SP extends ServiceProvi
       LOG.error("There was a problem emitting events: " + ex.getLocalizedMessage(), ex);
       collector.reportError(ex);
     }
+    // TODO remove: this is not needed since storm 0.8.1
     // Always sleep for a little bit
     try {
       Thread.sleep(SPOUT_SLEEP_TIME);

@@ -27,6 +27,10 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.comcast.viper.flume2storm.F2SConfigurationException;
+import com.comcast.viper.flume2storm.connection.receptor.EventReceptorFactory;
+import com.comcast.viper.flume2storm.location.LocationServiceFactory;
+import com.comcast.viper.flume2storm.location.ServiceProviderSerialization;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 
 /**
@@ -60,7 +64,7 @@ public class FlumeSpoutConfiguration implements Supplier<Configuration>, Seriali
   /**
    * Default value for {@value #EVENT_RECEPTOR_FACTORY_CLASS}
    */
-  public static final String EVENT_RECEPTOR_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.receptor.KryoNetEventReceptorFactory";
+  public static final String EVENT_RECEPTOR_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.connection.receptor.KryoNetEventReceptorFactory";
 
   protected String locationServiceFactoryClassName;
   protected String serviceProviderSerializationClassName;
@@ -78,23 +82,23 @@ public class FlumeSpoutConfiguration implements Supplier<Configuration>, Seriali
    */
   public static FlumeSpoutConfiguration from(Configuration config) throws F2SConfigurationException {
     FlumeSpoutConfiguration result = new FlumeSpoutConfiguration();
-    String className = config.getString(LOCATION_SERVICE_FACTORY_CLASS, LOCATION_SERVICE_FACTORY_CLASS_DEFAULT);
     try {
-      result.setLocationServiceFactoryClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(LOCATION_SERVICE_FACTORY_CLASS, className, e);
+      result.setLocationServiceFactoryClassName(config.getString(LOCATION_SERVICE_FACTORY_CLASS,
+          LOCATION_SERVICE_FACTORY_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, LOCATION_SERVICE_FACTORY_CLASS, e);
     }
-    className = config.getString(SERVICE_PROVIDER_SERIALIZATION_CLASS, SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT);
     try {
-      result.setServiceProviderSerializationClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(SERVICE_PROVIDER_SERIALIZATION_CLASS, className, e);
+      result.setServiceProviderSerializationClassName(config.getString(SERVICE_PROVIDER_SERIALIZATION_CLASS,
+          SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, SERVICE_PROVIDER_SERIALIZATION_CLASS, e);
     }
-    className = config.getString(EVENT_RECEPTOR_FACTORY_CLASS, EVENT_RECEPTOR_FACTORY_CLASS_DEFAULT);
     try {
-      result.setEventReceptorFactoryClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(EVENT_RECEPTOR_FACTORY_CLASS, className, e);
+      result.setEventReceptorFactoryClassName(config.getString(EVENT_RECEPTOR_FACTORY_CLASS,
+          EVENT_RECEPTOR_FACTORY_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, EVENT_RECEPTOR_FACTORY_CLASS, e);
     }
     result.configuration = getMapFromConfiguration(config);
     return result;
@@ -147,14 +151,16 @@ public class FlumeSpoutConfiguration implements Supplier<Configuration>, Seriali
   }
 
   /**
-   * @param locationServiceFactoryClass
+   * @param locationServiceFactoryClassName
    *          See {@link #getLocationServiceFactoryClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setLocationServiceFactoryClassName(String locationServiceFactoryClass) throws ClassNotFoundException {
-    Class.forName(locationServiceFactoryClass);
-    this.locationServiceFactoryClassName = locationServiceFactoryClass;
+  public void setLocationServiceFactoryClassName(String locationServiceFactoryClassName) throws ClassNotFoundException {
+    Class<?> locationServiceFactoryClass = Class.forName(locationServiceFactoryClassName);
+    Preconditions.checkArgument(LocationServiceFactory.class.isAssignableFrom(locationServiceFactoryClass),
+        "The class must implement " + LocationServiceFactory.class.getCanonicalName());
+    this.locationServiceFactoryClassName = locationServiceFactoryClassName;
   }
 
   /**
@@ -165,15 +171,17 @@ public class FlumeSpoutConfiguration implements Supplier<Configuration>, Seriali
   }
 
   /**
-   * @param serviceProviderSerializationClass
+   * @param serviceProviderSerializationClassName
    *          See {@link #getServiceProviderSerializationClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setServiceProviderSerializationClassName(String serviceProviderSerializationClass)
+  public void setServiceProviderSerializationClassName(String serviceProviderSerializationClassName)
       throws ClassNotFoundException {
-    Class.forName(serviceProviderSerializationClass);
-    this.serviceProviderSerializationClassName = serviceProviderSerializationClass;
+    Class<?> serviceProviderSerializationClass = Class.forName(serviceProviderSerializationClassName);
+    Preconditions.checkArgument(ServiceProviderSerialization.class.isAssignableFrom(serviceProviderSerializationClass),
+        "The class must implement " + ServiceProviderSerialization.class.getCanonicalName());
+    this.serviceProviderSerializationClassName = serviceProviderSerializationClassName;
   }
 
   /**
@@ -184,14 +192,16 @@ public class FlumeSpoutConfiguration implements Supplier<Configuration>, Seriali
   }
 
   /**
-   * @param eventReceptorFactory
+   * @param eventReceptorFactoryClassName
    *          See {@link #getEventReceptorFactoryClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setEventReceptorFactoryClassName(String eventReceptorFactory) throws ClassNotFoundException {
-    Class.forName(serviceProviderSerializationClassName);
-    this.eventReceptorFactoryClassName = eventReceptorFactory;
+  public void setEventReceptorFactoryClassName(String eventReceptorFactoryClassName) throws ClassNotFoundException {
+    Class<?> eventReceptorFactoryClass = Class.forName(eventReceptorFactoryClassName);
+    Preconditions.checkArgument(EventReceptorFactory.class.isAssignableFrom(eventReceptorFactoryClass),
+        "The class must implement " + EventReceptorFactory.class.getCanonicalName());
+    this.eventReceptorFactoryClassName = eventReceptorFactoryClassName;
   }
 
   /**

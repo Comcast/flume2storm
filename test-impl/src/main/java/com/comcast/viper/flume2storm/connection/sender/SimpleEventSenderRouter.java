@@ -29,6 +29,9 @@ public class SimpleEventSenderRouter {
   private static final SimpleEventSenderRouter instance = new SimpleEventSenderRouter();
   protected final Map<SimpleConnectionParameters, SimpleEventSender> senders;
 
+  /**
+   * @return The {@link SimpleEventSenderRouter} instance
+   */
   public static SimpleEventSenderRouter getInstance() {
     return instance;
   }
@@ -37,14 +40,32 @@ public class SimpleEventSenderRouter {
     senders = new HashMap<SimpleConnectionParameters, SimpleEventSender>();
   }
 
+  /**
+   * Registers the {@link SimpleEventSender}
+   * 
+   * @param sender
+   *          A {@link SimpleEventSender}
+   */
   public void add(SimpleEventSender sender) {
     senders.put(sender.getConnectionParameters(), sender);
   }
 
+  /**
+   * Unregisters the {@link SimpleEventSender}
+   * 
+   * @param sender
+   *          A {@link SimpleEventSender}
+   */
   public void remove(SimpleEventSender sender) {
     senders.remove(sender.getConnectionParameters());
   }
 
+  /**
+   * @param connectionParameters
+   *          Some connection parameters
+   * @return The {@link SimpleEventSender} associated with the specified
+   *         connection parameters
+   */
   public SimpleEventSender get(SimpleConnectionParameters connectionParameters) {
     return senders.get(connectionParameters);
   }

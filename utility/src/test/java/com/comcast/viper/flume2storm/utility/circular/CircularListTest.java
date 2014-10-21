@@ -18,20 +18,23 @@ package com.comcast.viper.flume2storm.utility.circular;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Tests {@link CircularList}
+ */
 public class CircularListTest {
-  public void testCircularList(final CircularList<Integer> list) {
+  protected void testCircularList(final CircularList<Integer> list) {
     Assert.assertNull(list.getNext());
     Assert.assertTrue(list.isEmpty());
     Assert.assertEquals(0, list.size());
     Assert.assertNull(list.getNext());
     Assert.assertTrue(list.isEmpty());
-    list.add(1);
+    Assert.assertTrue(list.add(1));
     Assert.assertFalse(list.isEmpty());
     Assert.assertEquals(1, list.size());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
-    list.add(2);
+    Assert.assertTrue(list.add(2));
     Assert.assertFalse(list.isEmpty());
     Assert.assertEquals(2, list.size());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
@@ -39,7 +42,7 @@ public class CircularListTest {
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
     Assert.assertEquals(Integer.valueOf(2), list.getNext());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
-    list.add(3);
+    Assert.assertTrue(list.add(3));
     Assert.assertFalse(list.isEmpty());
     Assert.assertEquals(3, list.size());
     Assert.assertEquals(Integer.valueOf(2), list.getNext());
@@ -47,21 +50,24 @@ public class CircularListTest {
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
     Assert.assertEquals(Integer.valueOf(2), list.getNext());
     Assert.assertEquals(Integer.valueOf(3), list.getNext());
-    list.remove(2);
+    Assert.assertTrue(list.remove(2));
     Assert.assertFalse(list.isEmpty());
     Assert.assertEquals(2, list.size());
     Assert.assertEquals(Integer.valueOf(1), list.getNext());
     Assert.assertEquals(Integer.valueOf(3), list.getNext());
-    list.remove(1);
+    Assert.assertTrue(list.remove(1));
     Assert.assertFalse(list.isEmpty());
     Assert.assertEquals(1, list.size());
-    list.remove(3);
+    Assert.assertTrue(list.remove(3));
     Assert.assertTrue(list.isEmpty());
     Assert.assertEquals(0, list.size());
     Assert.assertNull(list.getNext());
     Assert.assertNull(list.getNext());
   }
 
+  /**
+   * Test the {@link ReadWriteCircularList} implementation
+   */
   @Test
   public void testIt() {
     testCircularList(new ReadWriteCircularList<Integer>());

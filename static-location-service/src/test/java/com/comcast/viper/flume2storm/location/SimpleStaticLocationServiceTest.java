@@ -15,29 +15,123 @@
  */
 package com.comcast.viper.flume2storm.location;
 
+import static com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters.HOSTNAME;
+import static com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters.PORT;
+import static com.comcast.viper.flume2storm.location.StaticLocationServiceConfiguration.SERVICE_PROVIDER_BASE;
+import static com.comcast.viper.flume2storm.location.StaticLocationServiceConfiguration.SERVICE_PROVIDER_BASE_DEFAULT;
+import static com.comcast.viper.flume2storm.location.StaticLocationServiceConfiguration.SERVICE_PROVIDER_LIST;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Collection;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
-import junit.framework.Assert;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.BaseConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
+
+/**
+ * Test the {@link StaticLocationService}
+ */
 public class SimpleStaticLocationServiceTest {
-	@Test
-	public void testIt() throws ConfigurationException {
-		SimpleStaticLocationService.createInstance(new PropertiesConfiguration("src/test/resources/simpleServiceProviders.properties"));
-		Collection<SimpleServiceProvider> serviceProviders = SimpleStaticLocationService.getInstance().getServiceProviders();
-		Assert.assertEquals(3, serviceProviders.size());
-		SortedSet<SimpleServiceProvider> orderedServiceProviders = new TreeSet<SimpleServiceProvider>();
-		orderedServiceProviders.addAll(serviceProviders);
-		SimpleServiceProvider firstSP = orderedServiceProviders.first();
-		Assert.assertEquals("localhost", firstSP.getHostname());
-		Assert.assertEquals(1000, firstSP.getPort());
-		SimpleServiceProvider lastSP = orderedServiceProviders.last();
-		Assert.assertEquals("machine2.mydomain.com", lastSP.getHostname());
-		Assert.assertEquals(1001, lastSP.getPort());
-	}
+  private static final String SP1 = "quick";
+  private static final SimpleConnectionParameters CP1 = new SimpleConnectionParameters("machine1.mydomain.com", 1000);
+  private static final String SP2 = "brown";
+  private static final SimpleConnectionParameters CP2 = new SimpleConnectionParameters("localhost", 1000);
+  private static final String SP3 = "fox";
+  private static final SimpleConnectionParameters CP3 = new SimpleConnectionParameters("machine2.mydomain.com", 1001);
+  private static final String SIMPLE_SERVICE_PROVIDER_BASE = "simple.service.providers";
+
+  private Configuration configuration;
+
+  private static String buildPName(String... elements) {
+    return StringUtils.join(elements, ".");
+  }
+
+  /**
+   * Loads the {@link StaticLocationService} configuration file
+   */
+  @Before
+  public void init() {
+    configuration = new BaseConfiguration();
+    // List of service providers to load
+    configuration.addProperty(SERVICE_PROVIDER_LIST, StringUtils.join(new String[] { SP1, SP2 }, " "));
+
+    // First service provider
+    configuration.addProperty(buildPName(SERVICE_PROVIDER_BASE_DEFAULT, SP1, HOSTNAME), CP1.getHostname());
+    configuration.addProperty(buildPName(SERVICE_PROVIDER_BASE_DEFAULT, SP1, PORT), CP1.getPort());
+
+    // Second service provider
+    configuration.addProperty(buildPName(SERVICE_PROVIDER_BASE_DEFAULT, SP2, HOSTNAME), CP2.getHostname());
+    configuration.addProperty(buildPName(SERVICE_PROVIDER_BASE_DEFAULT, SP2, PORT), CP2.getPort());
+
+    // Third service provider
+    configuration.addProperty(buildPName(SIMPLE_SERVICE_PROVIDER_BASE, SP3, HOSTNAME), CP3.getHostname());
+    configuration.addProperty(buildPName(SIMPLE_SERVICE_PROVIDER_BASE, SP3, PORT), CP3.getPort());
+
+    configuration.addProperty("some.other.variable", "whatever");
+  }
+
+  /**
+   * Test a configuration missing the {@link ServiceProviderConfigurationLoader}
+   * attribute
+   * 
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
+  @Test(expected = F2SConfigurationException.class)
+  @SuppressWarnings("unused")
+  public void testInvalidConfiguration() throws F2SConfigurationException {
+    new SimpleStaticLocationService(configuration);
+  }
+
+  /**
+   * Test a configuration using the default
+   * {@link StaticLocationServiceConfiguration#SERVICE_PROVIDER_BASE}
+   * 
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
+  @Test
+  public void testBaseConfiguration() throws F2SConfigurationException {
+    // Adding Service provider loader
+    configuration.addProperty(StaticLocationServiceConfiguration.CONFIGURATION_LOADER_CLASS,
+        SimpleServiceProviderConfigurationLoader.class.getName());
+
+    // Loading static location service
+    SimpleStaticLocationService ssLocationService = new SimpleStaticLocationService(configuration);
+
+    Collection<SimpleServiceProvider> serviceProviders = ssLocationService.getServiceProviders();
+    assertThat(serviceProviders).hasSize(2);
+    assertThat(serviceProviders).contains(new SimpleServiceProvider(CP1), new SimpleServiceProvider(CP2));
+  }
+
+  /**
+   * Test a configuration using a specific
+   * {@link StaticLocationServiceConfiguration#SERVICE_PROVIDER_BASE}
+   * 
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
+  @Test
+  public void testWithSimpleBase() throws F2SConfigurationException {
+    // Adding Service provider loader
+    configuration.addProperty(StaticLocationServiceConfiguration.CONFIGURATION_LOADER_CLASS,
+        SimpleServiceProviderConfigurationLoader.class.getName());
+    // Changing service provider base
+    configuration.addProperty(SERVICE_PROVIDER_BASE, SIMPLE_SERVICE_PROVIDER_BASE);
+    // Changing list of service providers
+    configuration.clearProperty(SERVICE_PROVIDER_LIST);
+    configuration.addProperty(SERVICE_PROVIDER_LIST, SP3);
+
+    // Loading static location service
+    SimpleStaticLocationService ssLocationService = new SimpleStaticLocationService(configuration);
+
+    Collection<SimpleServiceProvider> serviceProviders = ssLocationService.getServiceProviders();
+    assertThat(serviceProviders).hasSize(1);
+    assertThat(serviceProviders).contains(new SimpleServiceProvider(CP3));
+  }
 }

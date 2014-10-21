@@ -17,12 +17,15 @@ package com.comcast.viper.flume2storm.location;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Manages a list of service providers and provides join/leave notifications
@@ -36,15 +39,15 @@ class ServiceProviderManager<SP extends ServiceProvider<?>> {
   /** The one listener we'll notify (i.e. the location service) */
   protected final ServiceListener<SP> listener;
   /** Current list of active servers */
-  protected final List<SP> serviceProviders;
+  protected final Map<String, SP> serviceProviders;
 
   public ServiceProviderManager(ServiceListener<SP> listener) {
     this.listener = listener;
-    serviceProviders = new ArrayList<SP>();
+    serviceProviders = new HashMap<String, SP>();
   }
 
   public synchronized List<SP> get() {
-    return Collections.unmodifiableList(serviceProviders);
+    return ImmutableList.copyOf(serviceProviders.values());
   }
 
   /**
@@ -55,11 +58,11 @@ class ServiceProviderManager<SP extends ServiceProvider<?>> {
    *          The new list of service providers
    */
   public synchronized void set(final Collection<SP> newList) {
-    final List<SP> oldList = new ArrayList<SP>(serviceProviders);
+    final List<SP> oldList = new ArrayList<SP>(serviceProviders.values());
     final Iterator<SP> it = newList.iterator();
     while (it.hasNext()) {
       final SP current = it.next();
-      if (serviceProviders.contains(current)) {
+      if (contains(current.getConnectionParameters().getId())) {
         /*
          * The element is in the current and the new list - no modification of
          * the current list, but we remove it from the old list in order to see
@@ -82,17 +85,21 @@ class ServiceProviderManager<SP extends ServiceProvider<?>> {
   }
 
   protected void addServiceProvider(final SP sp) {
-    serviceProviders.add(sp);
-    LOG.debug("Adding: {}", sp);
-    try {
-      listener.onProviderAdded(sp);
-    } catch (final Exception e) {
-      LOG.warn("Failed to notify listener about the addition of service provider {} : {}", sp, e.getLocalizedMessage());
+    SP previous = serviceProviders.put(sp.getConnectionParameters().getId(), sp);
+    if (previous == null) {
+      LOG.debug("Adding: {}", sp);
+      try {
+        listener.onProviderAdded(sp);
+      } catch (final Exception e) {
+        LOG.warn("Failed to notify listener about the addition of service provider {} : {}", sp,
+            e.getLocalizedMessage());
+      }
     }
   }
 
   protected void removeServiceProvider(final SP sp) {
-    if (serviceProviders.remove(sp)) {
+    SP removed = serviceProviders.remove(sp.getConnectionParameters().getId());
+    if (removed != null) {
       LOG.debug("Removing: {}", sp);
       try {
         listener.onProviderRemoved(sp);
@@ -109,8 +116,21 @@ class ServiceProviderManager<SP extends ServiceProvider<?>> {
    *          The new service provider
    */
   public synchronized void add(final SP sp) {
-    if (!serviceProviders.contains(sp)) {
+    if (!contains(sp.getConnectionParameters().getId())) {
       addServiceProvider(sp);
+    }
+  }
+
+  /**
+   * Adds a collection of service providers, providing a notification to the
+   * listener
+   * 
+   * @param serviceProviders
+   *          The new service providers to add
+   */
+  public synchronized void addAll(final Collection<SP> serviceProviders) {
+    for (SP sp : serviceProviders) {
+      add(sp);
     }
   }
 
@@ -118,9 +138,28 @@ class ServiceProviderManager<SP extends ServiceProvider<?>> {
    * Removes a service provider, providing a notification to the listener
    * 
    * @param sp
-   *          The new service provider
+   *          A service provider
    */
   public synchronized void remove(final SP sp) {
     removeServiceProvider(sp);
+  }
+
+  /**
+   * Removes all the {@link ServiceProvider} from the list
+   */
+  public synchronized void clear() {
+    for (SP sp : serviceProviders.values()) {
+      removeServiceProvider(sp);
+    }
+  }
+
+  /**
+   * @param spId
+   *          A service provider
+   * @return True if the specified {@link ServiceProvider} is registered, false
+   *         otherwise
+   */
+  public synchronized boolean contains(final String spId) {
+    return serviceProviders.containsKey(spId);
   }
 }

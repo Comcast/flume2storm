@@ -30,7 +30,7 @@ import org.junit.Test;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
 import com.comcast.viper.flume2storm.zookeeper.ZkClientTestUtils;
-import com.comcast.viper.flume2storm.zookeeper.ZkServerTestUtils;
+import com.comcast.viper.flume2storm.zookeeper.ZkTestServer;
 import com.comcast.viper.flume2storm.zookeeper.ZkTestUtils;
 
 /**
@@ -38,32 +38,42 @@ import com.comcast.viper.flume2storm.zookeeper.ZkTestUtils;
  */
 public class DynamicLocationServiceTest extends ZkClientTestUtils {
   private DynamicLocationServiceConfiguration config;
+  private ZkTestServer zkServer = new ZkTestServer();
 
+  /**
+   * Initializes test
+   * 
+   * @throws Exception
+   *           If something failed
+   */
   @Before
   public void init() throws Exception {
     config = new DynamicLocationServiceConfiguration();
-    config.setConnectionStr(ZkTestUtils.HOST + ":" + ZkServerTestUtils.PORT);
+    config.setConnectionStr(zkServer.getConnectString());
     config.setConnectionTimeout(ZkTestUtils.TEST_TIMEOUT);
     config.setBasePath("LocationService");
     config.setServiceName("TestDynamic");
 
-    ZkServerTestUtils.startZkServer();
-    ZkServerTestUtils.waitZkServerOn();
+    zkServer.start();
   }
 
+  /**
+   * Clean up test
+   * 
+   * @throws Exception
+   *           If something failed
+   */
   @After
   public void terminate() throws Exception {
-    ZkServerTestUtils.stopZkServer();
-    System.out.println("Server stopped.");
-    ZkServerTestUtils.waitZkServerOff();
-    System.out.println("All done.");
+    zkServer.stop();
+    zkServer.cleanup();
   }
 
   private static class FromHost {
-    private DynamicLocationService<SimpleServiceProvider> locationService;
-    private List<SimpleServiceProvider> recentlyAddedProviders = new ArrayList<SimpleServiceProvider>(10);
-    private List<SimpleServiceProvider> recentlyRemovedProviders = new ArrayList<SimpleServiceProvider>(10);
-    private AtomicBoolean notified = new AtomicBoolean(false);
+    DynamicLocationService<SimpleServiceProvider> locationService;
+    List<SimpleServiceProvider> recentlyAddedProviders = new ArrayList<SimpleServiceProvider>(10);
+    List<SimpleServiceProvider> recentlyRemovedProviders = new ArrayList<SimpleServiceProvider>(10);
+    AtomicBoolean notified = new AtomicBoolean(false);
 
     public FromHost(DynamicLocationServiceConfiguration config) {
       locationService = new DynamicLocationService<SimpleServiceProvider>(config,
@@ -94,7 +104,7 @@ public class DynamicLocationServiceTest extends ZkClientTestUtils {
       }, timeout);
     }
 
-    public void connect() throws InterruptedException {
+    public void connect() {
       if (!locationService.start())
         Assert.fail("Failed to start the location service");
     }
@@ -118,6 +128,12 @@ public class DynamicLocationServiceTest extends ZkClientTestUtils {
     }
   }
 
+  /**
+   * Test {@link DynamicLocationService}
+   * 
+   * @throws Exception
+   *           If something failed
+   */
   @Test
   public void testIt() throws Exception {
     FromHost fromHost1 = new FromHost(config);

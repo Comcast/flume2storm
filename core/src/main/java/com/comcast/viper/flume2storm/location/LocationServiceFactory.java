@@ -21,7 +21,7 @@ import com.comcast.viper.flume2storm.F2SConfigurationException;
 
 /**
  * Interface to build a Location Service. It follows the abstract factory design
- * pattern.
+ * pattern. Implementation of this factory must have a no-argument constructor.
  * 
  * @param <SP>
  *          The Service Provider class

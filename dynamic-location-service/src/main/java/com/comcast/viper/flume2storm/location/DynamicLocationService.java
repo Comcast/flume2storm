@@ -73,6 +73,7 @@ public class DynamicLocationService<SP extends ServiceProvider<?>> extends Abstr
     zkClient.configure(config);
     servicePath = ZkUtilies.buildZkPath(config.getBasePath(), config.getServiceName());
     registrations = new ConcurrentHashMap<SP, String>();
+    LOG.debug("Created DynamicLocationService with: {}", config);
   }
 
   /**
@@ -82,6 +83,7 @@ public class DynamicLocationService<SP extends ServiceProvider<?>> extends Abstr
    */
   @Override
   public boolean start() {
+    LOG.debug("Starting...");
     if (!zkClient.start())
       return false;
     // TODO use configuration to set a max timeout
@@ -95,6 +97,7 @@ public class DynamicLocationService<SP extends ServiceProvider<?>> extends Abstr
    */
   @Override
   public boolean stop() {
+    LOG.debug("Stopping...");
     return zkClient.stop();
   }
 

@@ -17,79 +17,111 @@ package com.comcast.viper.flume2storm.utility.test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.BasicConfigurator;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.comcast.viper.flume2storm.utility.Constants;
+
+/**
+ * Test {@link TestUtils}
+ */
 public class TestUtilsTest {
   protected static final Logger LOG = LoggerFactory.getLogger(TestUtilsTest.class);
+  private static final int DURATION = 800;
   protected final AtomicBoolean threadDone = new AtomicBoolean();
 
-  @BeforeClass
-  public static void initTest() {
-    BasicConfigurator.configure();
-  }
-
+  /**
+   * Test initialization
+   */
   @Before
-  public void initTestCase() {
+  public void init() {
     threadDone.set(false);
   }
 
-  private class TestThread extends Thread {
+  protected class TestThread extends Thread {
     @Override
     public void run() {
-      LOG.info("Starting thread...");
+      LOG.debug("Starting thread...");
       try {
-        Thread.sleep(800);
+        Thread.sleep(DURATION);
       } catch (final InterruptedException e) {
         e.printStackTrace();
       }
-      LOG.info("Triggering condition!");
+      LOG.debug("Triggering condition!");
       threadDone.set(true);
-      LOG.info("Thread terminated");
+      LOG.debug("Thread terminated");
     }
   }
 
-  private class MyTestCondition implements TestCondition {
+  protected class MyTestCondition implements TestCondition {
     @Override
     public boolean evaluate() {
-      LOG.info("Evaluating...");
+      LOG.debug("Evaluating...");
       return threadDone.get();
     }
   }
 
+  /**
+   * Test {@link TestUtils#waitFor(TestCondition)}
+   * 
+   * @throws InterruptedException
+   *           If interrupted
+   */
   @Test
   public void testInfinite() throws InterruptedException {
     final Thread thread = new TestThread();
     thread.start();
-    LOG.info("Waiting for condition (thread terminated)...");
+    LOG.debug("Waiting for condition (thread terminated)...");
     TestUtils.waitFor(new MyTestCondition());
-    LOG.info("Done waiting");
+    LOG.debug("Done waiting");
     thread.join();
   }
 
+  /**
+   * Test {@link TestUtils#waitFor(TestCondition, int)} failure
+   * 
+   * @throws InterruptedException
+   *           If interrupted
+   */
   @Test(expected = AssertionError.class)
   public void testTimeoutFail() throws InterruptedException {
     final Thread thread = new TestThread();
     thread.start();
-    LOG.info("Waiting for condition (thread terminated)...");
-    final boolean result = TestUtils.waitFor(new MyTestCondition(), 400);
-    LOG.info("Done waiting");
-    thread.join();
+    LOG.debug("Waiting for condition (thread terminated)...");
+    TestUtils.waitFor(new MyTestCondition(), DURATION / 2);
   }
 
+  /**
+   * Test {@link TestUtils#waitFor(TestCondition, int)} success
+   * 
+   * @throws InterruptedException
+   *           If interrupted
+   */
   @Test
   public void testTimeoutSuccess() throws InterruptedException {
     final Thread thread = new TestThread();
     thread.start();
-    LOG.info("Waiting for condition (thread terminated)...");
-    final boolean result = TestUtils.waitFor(new MyTestCondition(), 2000);
-    LOG.info("Done waiting");
+    LOG.debug("Waiting for condition (thread terminated)...");
+    final boolean result = TestUtils.waitFor(new MyTestCondition(), DURATION * 2);
+    LOG.debug("Done waiting");
     Assert.assertTrue(result);
     thread.join();
+  }
+
+  /**
+   * Test {@link TestUtils#getAvailablePort()}
+   */
+  @Test
+  public void testGetAvailablePort() {
+    int port1 = TestUtils.getAvailablePort();
+    Assert.assertTrue(port1 > 0);
+    Assert.assertTrue(port1 < Constants.MAX_UNSIGNED_SHORT);
+    int port2 = TestUtils.getAvailablePort();
+    Assert.assertTrue(port2 > 0);
+    Assert.assertTrue(port2 < Constants.MAX_UNSIGNED_SHORT);
+    Assert.assertTrue(port1 != port2);
   }
 }

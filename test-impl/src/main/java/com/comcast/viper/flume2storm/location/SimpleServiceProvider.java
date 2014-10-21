@@ -15,11 +15,16 @@
  */
 package com.comcast.viper.flume2storm.location;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
 import com.google.common.base.Preconditions;
 
 /**
- * A simple implementation of ServiceProvider for test/example purpose
+ * A simple implementation of {@link ServiceProvider} for test purpose
  */
 public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionParameters> {
   private static final long serialVersionUID = 1512839521887743232L;
@@ -44,17 +49,8 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
     Preconditions.checkNotNull(hostname);
     Preconditions.checkNotNull(port);
     connectionParameters = new SimpleConnectionParameters();
-    connectionParameters.setServerAddress(hostname);
-    connectionParameters.setServerPort(port);
-  }
-
-  /**
-   * @see com.comcast.viper.flume2storm.location.ServiceProvider#getId()
-   */
-  @Override
-  public String getId() {
-    return new StringBuilder().append(connectionParameters.getServerAddress()).append(":")
-        .append(connectionParameters.getServerPort()).toString();
+    connectionParameters.setHostname(hostname);
+    connectionParameters.setPort(port);
   }
 
   /**
@@ -69,14 +65,14 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
    * @return The hostname or IP address of the service provider
    */
   public String getHostname() {
-    return connectionParameters.getServerAddress();
+    return connectionParameters.getHostname();
   }
 
   /**
    * @return The port that the service provider is listening to
    */
   public int getPort() {
-    return connectionParameters.getServerPort();
+    return connectionParameters.getPort();
   }
 
   /**
@@ -85,10 +81,10 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
   public int compareTo(ServiceProvider<SimpleConnectionParameters> o) {
     if (o == null)
       return 1;
-    int res = getHostname().compareTo(o.getConnectionParameters().getServerAddress());
+    int res = getHostname().compareTo(o.getConnectionParameters().getHostname());
     if (res != 0)
       return res;
-    return Integer.valueOf(getPort()).compareTo(o.getConnectionParameters().getServerPort());
+    return Integer.valueOf(getPort()).compareTo(o.getConnectionParameters().getPort());
   }
 
   /**
@@ -96,10 +92,7 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
    */
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((connectionParameters == null) ? 0 : connectionParameters.hashCode());
-    return result;
+    return new HashCodeBuilder().append(connectionParameters).hashCode();
   }
 
   /**
@@ -114,12 +107,7 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
     if (getClass() != obj.getClass())
       return false;
     SimpleServiceProvider other = (SimpleServiceProvider) obj;
-    if (connectionParameters == null) {
-      if (other.connectionParameters != null)
-        return false;
-    } else if (!connectionParameters.equals(other.connectionParameters))
-      return false;
-    return true;
+    return new EqualsBuilder().append(this.connectionParameters, other.connectionParameters).isEquals();
   }
 
   /**
@@ -127,6 +115,7 @@ public class SimpleServiceProvider implements ServiceProvider<SimpleConnectionPa
    */
   @Override
   public String toString() {
-    return "SimpleServiceProvider [hostname=" + getHostname() + ", port=" + getPort() + "]";
+    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("connectionParameters",
+        connectionParameters).build();
   }
 }

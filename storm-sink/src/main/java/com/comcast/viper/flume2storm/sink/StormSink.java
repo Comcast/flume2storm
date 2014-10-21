@@ -18,6 +18,8 @@ package com.comcast.viper.flume2storm.sink;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.flume.Channel;
 import org.apache.flume.ChannelException;
@@ -36,6 +38,8 @@ import com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters;
 import com.comcast.viper.flume2storm.connection.parameters.ConnectionParametersFactory;
 import com.comcast.viper.flume2storm.connection.sender.EventSender;
 import com.comcast.viper.flume2storm.connection.sender.EventSenderFactory;
+import com.comcast.viper.flume2storm.connection.sender.EventSenderStats;
+import com.comcast.viper.flume2storm.connection.sender.EventSenderStatsMBean;
 import com.comcast.viper.flume2storm.event.F2SEvent;
 import com.comcast.viper.flume2storm.location.LocationService;
 import com.comcast.viper.flume2storm.location.LocationServiceFactory;
@@ -75,7 +79,9 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
       sinkCounter = new SinkCounter(getName());
     }
     try {
-      configuration = StormSinkConfiguration.from(new MapConfiguration(context.getParameters()));
+      Configuration mapConfiguration = new MapConfiguration(context.getParameters());
+      LOG.debug("Storm-sink configuration:\n{}", ConfigurationUtils.toString(mapConfiguration));
+      configuration = StormSinkConfiguration.from(mapConfiguration);
       Class<? extends ConnectionParametersFactory<CP>> connectionParametersFactoryClass = (Class<? extends ConnectionParametersFactory<CP>>) Class
           .forName(configuration.getConnectionParametersFactoryClassName());
       this.connectionParametersFactory = connectionParametersFactoryClass.newInstance();
@@ -109,7 +115,7 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
       locationService.start();
       locationService.register((SP) eventSender);
 
-      eventConverter = new EventConverter(configuration.getTimestampHeader());
+      eventConverter = new EventConverter();
       LOG.info("Opened");
       super.start();
     } catch (F2SConfigurationException e) {
@@ -136,7 +142,7 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
    */
   @Override
   public Status process() throws EventDeliveryException {
-    if (eventSender.getNbReceptors() == 0) {
+    if (eventSender.getStats().getNbClients() == 0) {
       // No receptor connected
       return Status.BACKOFF;
     }
@@ -151,7 +157,6 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
         if (event == null) {
           break;
         }
-        long t0 = System.currentTimeMillis();
         batch.add(eventConverter.convert(event));
       }
       if (batch.isEmpty()) {
@@ -175,7 +180,9 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
       if (t instanceof Error) {
         throw (Error) t;
       } else if (t instanceof ChannelException) {
-        LOG.error("Storm Sink " + getName() + ": Unable to get event from channel " + channel.getName(), t);
+        if (!(t.getCause() instanceof InterruptedException)) {
+          LOG.error("Storm Sink " + getName() + ": Unable to get event from channel " + channel.getName(), t);
+        }
         result = Status.BACKOFF;
       } else {
         throw new EventDeliveryException("Failed to accept events", t);
@@ -184,5 +191,19 @@ public class StormSink<CP extends ConnectionParameters, SP extends ServiceProvid
       transaction.close();
     }
     return result;
+  }
+
+  /**
+   * @return The stats associated with teh {@link EventSender}
+   */
+  public EventSenderStatsMBean getEventSernderStats() {
+    return eventSender == null ? new EventSenderStats("Unknown") : eventSender.getStats();
+  }
+
+  /**
+   * @return The sink counter
+   */
+  public SinkCounter getSinkCounter() {
+    return sinkCounter;
   }
 }

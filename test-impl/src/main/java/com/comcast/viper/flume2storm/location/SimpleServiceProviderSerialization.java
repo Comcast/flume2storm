@@ -18,7 +18,7 @@ package com.comcast.viper.flume2storm.location;
 import com.google.common.base.Preconditions;
 
 /**
- * A simple implementation of ServiceProviderSerialization for test/example
+ * A simple implementation of {@link ServiceProviderSerialization} for test
  * purpose
  */
 public class SimpleServiceProviderSerialization implements ServiceProviderSerialization<SimpleServiceProvider> {

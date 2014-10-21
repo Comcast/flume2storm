@@ -30,7 +30,8 @@
     <description>A Flume sink that sends events to Storm</description>
 
     <properties>
-        <license.header.location>../license.header</license.header.location>
+        <f2s.basedir>${project.parent.basedir}</f2s.basedir>
+        <leaf-project>true</leaf-project>
         <flume.version>1.5.0.1</flume.version>
     </properties>
 
@@ -55,25 +56,18 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.comcast.viper.flume2storm</groupId>
-            <artifactId>dynamic-location-service</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.comcast.viper.flume2storm</groupId>
-            <artifactId>kryonet-flume2storm</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>${f2s.basedir}/resources/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
             </plugin>
         </plugins>
     </build>

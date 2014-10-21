@@ -21,7 +21,7 @@ import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
 
 /**
- * Implementation of the EventSender factory for test purpose
+ * Implementation of the {@link EventSenderFactory} for test purpose
  */
 public class SimpleEventSenderFactory implements EventSenderFactory<SimpleConnectionParameters> {
   /**

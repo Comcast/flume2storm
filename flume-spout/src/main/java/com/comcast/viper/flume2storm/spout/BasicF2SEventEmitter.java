@@ -27,7 +27,7 @@ import com.comcast.viper.flume2storm.event.F2SEvent;
 
 /**
  * Basic implementation of the Flume2Storm emitter. It emits the full Flume
- * event (timestamp, header and content) on the default stream.<br/>
+ * event (header and content) on the default stream.<br/>
  * Programming note: Make sure you use the {@link F2SEventSerializer} from
  * kryonet-flume2storm to serialize the {@link F2SEvent}
  */

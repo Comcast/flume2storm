@@ -20,6 +20,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.zookeeper.ZkClient;
 import com.comcast.viper.flume2storm.zookeeper.ZkClientConfiguration;
 import com.google.common.base.Preconditions;
@@ -46,12 +47,14 @@ public class DynamicLocationServiceConfiguration extends ZkClientConfiguration {
    *          The configuration to use
    * @return The newly built {@link DynamicLocationServiceConfiguration} based
    *         on the configuration specified
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
    */
-  public static DynamicLocationServiceConfiguration from(Configuration config) {
+  public static DynamicLocationServiceConfiguration from(Configuration config) throws F2SConfigurationException {
     DynamicLocationServiceConfiguration result = new DynamicLocationServiceConfiguration();
     result.setConnectionStr(config.getString(CONNECTION_STRING, CONNECTION_STRING_DEFAULT));
     result.setSessionTimeout(config.getInt(SESSION_TIMEOUT, SESSION_TIMEOUT_DEFAULT));
-    result.setConnectionTimeout(config.getInt(CONNECTION_TIMEOUT, CONNECTION_ITMEOUT_DEFAULT));
+    result.setConnectionTimeout(config.getInt(CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_DEFAULT));
     result.setReconnectionDelay(config.getInt(RECONNECTION_DELAY, RECONNECTION_DELAY_DEFAULT));
     result.setTerminationTimeout(config.getInt(TERMINATION_TIMEOUT, TERMINATION_TIMEOUT_DEFAULT));
     result.setBasePath(config.getString(BASE_PATH, BASE_PATH_DEFAULT));
@@ -66,7 +69,7 @@ public class DynamicLocationServiceConfiguration extends ZkClientConfiguration {
     super();
     connectionStr = CONNECTION_STRING_DEFAULT;
     sessionTimeout = SESSION_TIMEOUT_DEFAULT;
-    connectionTimeout = CONNECTION_ITMEOUT_DEFAULT;
+    connectionTimeout = CONNECTION_TIMEOUT_DEFAULT;
     reconnectionDelay = RECONNECTION_DELAY_DEFAULT;
     terminationTimeout = TERMINATION_TIMEOUT_DEFAULT;
     basePath = BASE_PATH_DEFAULT;
@@ -148,9 +151,9 @@ public class DynamicLocationServiceConfiguration extends ZkClientConfiguration {
    */
   @Override
   public String toString() {
-    return new ToStringBuilder("DynamicLocationServiceConfiguration").append("basePath", basePath)
-        .append("serviceName", serviceName).append("connectionStr", connectionStr)
-        .append("sessionTimeout", sessionTimeout).append("connectionTimeout", connectionTimeout)
-        .append("reconnectionDelay", reconnectionDelay).append("terminationTimeout", terminationTimeout).toString();
+    return new ToStringBuilder(this).append("basePath", basePath).append("serviceName", serviceName)
+        .append("connectionStr", connectionStr).append("sessionTimeout", sessionTimeout)
+        .append("connectionTimeout", connectionTimeout).append("reconnectionDelay", reconnectionDelay)
+        .append("terminationTimeout", terminationTimeout).toString();
   }
 }

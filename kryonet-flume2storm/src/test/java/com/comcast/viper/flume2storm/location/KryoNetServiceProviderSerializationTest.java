@@ -19,7 +19,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.comcast.viper.flume2storm.connection.KryoNetConnectionParameters;
+import com.comcast.viper.flume2storm.connection.parameters.KryoNetConnectionParameters;
 
 public class KryoNetServiceProviderSerializationTest {
 	@Test
@@ -35,7 +35,7 @@ public class KryoNetServiceProviderSerializationTest {
 		KryoNetConnectionParameters knCP = new KryoNetConnectionParameters();
 		// Way past:
 		// "According to RFC 1035 the length of a FQDN is limited to 255 characters"
-		knCP.setServerAddress(RandomStringUtils.randomAlphanumeric(24000));
+		knCP.setAddress(RandomStringUtils.randomAlphanumeric(24000));
 		knCP.setServerPort(8000);
 		knCP.setObjectBufferSize(1024);
 		knCP.setWriteBufferSize(10240);

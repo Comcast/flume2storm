@@ -18,12 +18,13 @@ package com.comcast.viper.flume2storm.event;
 import java.io.Serializable;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.Instant;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -36,12 +37,10 @@ import com.google.common.collect.ImmutableMap;
 public final class F2SEvent implements Serializable {
   private static final long serialVersionUID = -5906404402187281472L;
   private final Map<String, String> headers;
-  private final Instant timestamp;
   private final byte[] body;
 
   F2SEvent() {
     headers = ImmutableMap.of();
-    timestamp = Instant.now();
     body = new byte[0];
   }
 
@@ -51,23 +50,15 @@ public final class F2SEvent implements Serializable {
    * @param headers
    *          See {@link #getHeaders()}. If null, the headers is an empty
    *          immutable map.
-   * @param timestamp
-   *          See {@link #getTimestamp()}. If null, the timestamp is set to the
-   *          object construction time (i.e. now).
    * @param body
    *          See {@link #getBody()}. If null, the payload of the event is an
    *          empty byte array.
    */
-  public F2SEvent(Map<String, String> headers, Instant timestamp, byte[] body) {
+  public F2SEvent(Map<String, String> headers, byte[] body) {
     if (headers == null) {
       this.headers = ImmutableMap.of();
     } else {
       this.headers = ImmutableMap.copyOf(headers);
-    }
-    if (timestamp == null) {
-      this.timestamp = Instant.now();
-    } else {
-      this.timestamp = timestamp;
     }
     if (body == null) {
       this.body = ArrayUtils.EMPTY_BYTE_ARRAY;
@@ -84,15 +75,7 @@ public final class F2SEvent implements Serializable {
    */
   public F2SEvent(F2SEvent event) {
     headers = ImmutableMap.copyOf(event.getHeaders());
-    timestamp = event.getTimestamp();
     body = event.body;
-  }
-
-  /**
-   * @return The event timestamp
-   */
-  public Instant getTimestamp() {
-    return timestamp;
   }
 
   /**
@@ -123,7 +106,7 @@ public final class F2SEvent implements Serializable {
    */
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(headers).append(timestamp).append(body).hashCode();
+    return new HashCodeBuilder().append(headers).append(body).hashCode();
   }
 
   /**
@@ -138,7 +121,7 @@ public final class F2SEvent implements Serializable {
     if (getClass() != obj.getClass())
       return false;
     F2SEvent other = (F2SEvent) obj;
-    return new EqualsBuilder().append(this.headers, other.headers).append(this.timestamp, other.timestamp)
+    return new EqualsBuilder().append(this.headers, other.headers)
         .append(this.body, other.body).isEquals();
   }
 
@@ -147,7 +130,14 @@ public final class F2SEvent implements Serializable {
    */
   @Override
   public String toString() {
-    return new ToStringBuilder("F2SEvent").append("headers", headers).append("timestamp", timestamp)
-        .append("body", StringUtils.toEncodedString(body, F2SEventFactory.DEFAULT_CHARACTER_SET)).toString();
+    ToStringBuilder toStringBuilder = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("headers",
+        headers);
+    String bodyStr = StringUtils.toEncodedString(body, F2SEventFactory.DEFAULT_CHARACTER_SET);
+    if (StringUtils.isAsciiPrintable(bodyStr)) {
+      toStringBuilder.append("body", bodyStr);
+    } else {
+      toStringBuilder.append(Hex.encodeHexString(body));
+    }
+    return toStringBuilder.toString();
   }
 }

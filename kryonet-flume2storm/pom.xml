@@ -30,8 +30,8 @@
     <description>An implementation of the core Flume2Storm connection API using KryoNet client/server framework</description>
 
     <properties>
-        <license.header.location>../license.header</license.header.location>
-        <kryonet.version>2.18</kryonet.version>
+        <f2s.basedir>${project.parent.basedir}</f2s.basedir>
+        <kryonet.version>2.21</kryonet.version>
     </properties>
 
     <dependencies>
@@ -46,18 +46,20 @@
             <artifactId>utility</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.comcast.viper.flume2storm</groupId>
+            <artifactId>kryo-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 		<!-- Others -->
         <dependency>
-			<!-- Note: Kryo/Kryonet is weird: Storm uses Kryo 2.17. There are no version 
-				of KryoNet that uses Kryo 2.17, however, KryoNet 2.18 looks close, using 
-				Kryo 2.18 (which is not released!!). I haven't found a maven repo that hasa 
-				compatible 2.18 KryoNet. However, I downloaded KryoNet 2.18 and extracted 
-				the prod jar, available locally -->
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
             <groupId>kryonet</groupId>
-            <artifactId>kryonet-all</artifactId>
+            <artifactId>kryonet</artifactId>
             <version>${kryonet.version}</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/lib/kryonet-all-2.18.jar</systemPath>
         </dependency>
         <!-- Test -->
         <dependency>
@@ -71,8 +73,13 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>${f2s.basedir}/resources/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
             </plugin>
         </plugins>
     </build>

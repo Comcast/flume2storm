@@ -22,7 +22,7 @@ import com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters;
 
 /**
  * Interface to build an Event Sender. It follows the abstract factory design
- * pattern.
+ * pattern. Implementation of this factory must have a no-argument constructor.
  * 
  * @param <CP>
  *          The Connection Parameters class

@@ -15,60 +15,60 @@
  */
 package com.comcast.viper.flume2storm.zookeeper;
 
-import java.util.HashMap;
-
 import junit.framework.Assert;
 
+import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+
 public class ZkClientConfigurationTest {
-	@Test
-	public void testFromConfiguration() {
-		String connectionStr = "host1.whatever.org";
-		int sessionTimeout = 1111;
-		int connectionTimeout = 2222;
-		int reconnectionDelay = 3333;
-		int terminationTimeout = 4444;
-		Configuration config = new MapConfiguration(new HashMap<String, Object>());
-		config.addProperty(ZkClientConfiguration.CONNECTION_STRING, connectionStr);
-		config.addProperty(ZkClientConfiguration.SESSION_TIMEOUT, sessionTimeout);
-		config.addProperty(ZkClientConfiguration.CONNECTION_TIMEOUT, connectionTimeout);
-		config.addProperty(ZkClientConfiguration.RECONNECTION_DELAY, reconnectionDelay);
-		config.addProperty(ZkClientConfiguration.TERMINATION_TIMEOUT, terminationTimeout);
+  @Test
+  public void testFromConfiguration() throws F2SConfigurationException {
+    String connectionStr = "host1.whatever.org";
+    int sessionTimeout = 1111;
+    int connectionTimeout = 2222;
+    int reconnectionDelay = 3333;
+    int terminationTimeout = 4444;
+    Configuration config = new BaseConfiguration();
+    config.addProperty(ZkClientConfiguration.CONNECTION_STRING, connectionStr);
+    config.addProperty(ZkClientConfiguration.SESSION_TIMEOUT, sessionTimeout);
+    config.addProperty(ZkClientConfiguration.CONNECTION_TIMEOUT, connectionTimeout);
+    config.addProperty(ZkClientConfiguration.RECONNECTION_DELAY, reconnectionDelay);
+    config.addProperty(ZkClientConfiguration.TERMINATION_TIMEOUT, terminationTimeout);
 
-		ZkClientConfiguration zkClientConfiguration = ZkClientConfiguration.from(config);
-		Assert.assertEquals(connectionStr, zkClientConfiguration.getConnectionStr());
-		Assert.assertEquals(sessionTimeout, zkClientConfiguration.getSessionTimeout());
-		Assert.assertEquals(connectionTimeout, zkClientConfiguration.getConnectionTimeout());
-		Assert.assertEquals(reconnectionDelay, zkClientConfiguration.getReconnectionDelay());
-		Assert.assertEquals(terminationTimeout, zkClientConfiguration.getTerminationTimeout());
-	}
+    ZkClientConfiguration zkClientConfiguration = ZkClientConfiguration.from(config);
+    Assert.assertEquals(connectionStr, zkClientConfiguration.getConnectionStr());
+    Assert.assertEquals(sessionTimeout, zkClientConfiguration.getSessionTimeout());
+    Assert.assertEquals(connectionTimeout, zkClientConfiguration.getConnectionTimeout());
+    Assert.assertEquals(reconnectionDelay, zkClientConfiguration.getReconnectionDelay());
+    Assert.assertEquals(terminationTimeout, zkClientConfiguration.getTerminationTimeout());
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testInvalidConnectionStr() {
-		new ZkClientConfiguration().setConnectionStr(StringUtils.EMPTY);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidConnectionStr() {
+    new ZkClientConfiguration().setConnectionStr(StringUtils.EMPTY);
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testInvalidSessionTimeout() {
-		new ZkClientConfiguration().setSessionTimeout(-1);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidSessionTimeout() {
+    new ZkClientConfiguration().setSessionTimeout(-1);
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testInvalidConnectionTimeout() {
-		new ZkClientConfiguration().setConnectionTimeout(0);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidConnectionTimeout() {
+    new ZkClientConfiguration().setConnectionTimeout(0);
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testInvalidReconnectionDelay() {
-		new ZkClientConfiguration().setReconnectionDelay(-10);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidReconnectionDelay() {
+    new ZkClientConfiguration().setReconnectionDelay(-10);
+  }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testInvalidTerminationTimeout() {
-		new ZkClientConfiguration().setTerminationTimeout(0);
-	}
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidTerminationTimeout() {
+    new ZkClientConfiguration().setTerminationTimeout(0);
+  }
 }

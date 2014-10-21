@@ -19,7 +19,6 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
-import org.joda.time.Instant;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,9 +34,7 @@ public final class TestF2SEventComparator {
   public void testSame() {
     byte[] body = "Test string".getBytes();
     Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
-    Instant timestamp = Instant.now();
-    int res = new F2SEventComparator().compare(new F2SEvent(headers, timestamp, body), new F2SEvent(headers, timestamp,
-        body));
+    int res = new F2SEventComparator().compare(new F2SEvent(headers, body), new F2SEvent(headers, body));
     Assert.assertTrue(res == 0);
   }
 
@@ -47,35 +44,8 @@ public final class TestF2SEventComparator {
   @Test
   public void testHeader() {
     Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
-    Instant timestamp = Instant.now();
-    int res = new F2SEventComparator().compare(new F2SEvent(headers, timestamp, "1".getBytes()), new F2SEvent(headers,
-        timestamp, "2".getBytes()));
-    Assert.assertTrue(res < 0);
-  }
-
-  /**
-   * Test the comparison of Flume2Storm events where the timestamp is different
-   */
-  @Test
-  public void testTimestamp() {
-    byte[] body = "Test string".getBytes();
-    Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
-    long t0 = System.currentTimeMillis();
-    int res = new F2SEventComparator().compare(new F2SEvent(headers, new Instant(t0), body), new F2SEvent(headers,
-        new Instant(t0 + 1), body));
-    Assert.assertTrue(res < 0);
-  }
-
-  /**
-   * Test the comparison of Flume2Storm events where the timestamp and body are
-   * different
-   */
-  @Test
-  public void testTimestampPrecedence() {
-    Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
-    long t0 = System.currentTimeMillis();
-    int res = new F2SEventComparator().compare(new F2SEvent(headers, new Instant(t0), "2".getBytes()), new F2SEvent(
-        headers, new Instant(t0 + 1), "1".getBytes()));
+    int res = new F2SEventComparator().compare(new F2SEvent(headers, "1".getBytes()),
+        new F2SEvent(headers, "2".getBytes()));
     Assert.assertTrue(res < 0);
   }
 }

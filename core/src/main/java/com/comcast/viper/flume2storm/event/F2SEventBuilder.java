@@ -18,34 +18,14 @@ package com.comcast.viper.flume2storm.event;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.joda.time.Instant;
-
 import com.google.common.base.Supplier;
 
 /**
- * Builds a Flume2Storm event.
+ * Builds a Flume2Storm event
  */
 public class F2SEventBuilder implements Supplier<F2SEvent> {
   private Map<String, String> headers;
-  private Instant timestamp;
   private byte[] body;
-
-  /**
-   * @return See {@link F2SEvent#getTimestamp()}
-   */
-  public Instant getTimestamp() {
-    return timestamp;
-  }
-
-  /**
-   * @param timestamp
-   *          See {@link F2SEvent#getTimestamp()}
-   * @return This builder object
-   */
-  public F2SEventBuilder timestamp(Instant timestamp) {
-    this.timestamp = timestamp;
-    return this;
-  }
 
   /**
    * @return See {@link F2SEvent#getBody()}
@@ -100,6 +80,6 @@ public class F2SEventBuilder implements Supplier<F2SEvent> {
    * @see com.google.common.base.Supplier#get()
    */
   public F2SEvent get() {
-    return new F2SEvent(headers, timestamp, body);
+    return new F2SEvent(headers, body);
   }
 }

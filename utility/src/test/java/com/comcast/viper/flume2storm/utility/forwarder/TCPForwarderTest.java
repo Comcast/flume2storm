@@ -19,54 +19,63 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+/**
+ * Test {@link TCPForwarder} class
+ */
 public class TCPForwarderTest {
-	public static final int TRANSITION_SLEEP_TIME = 200;
+  private static final int TRANSITION_SLEEP_TIME = 200;
 
-	@Test
-	public void testIt() throws InterruptedException {
-		final TCPForwarderBuilder tcpForwarderBuilder = new TCPForwarderBuilder();
-		tcpForwarderBuilder.setInputPort(1111).setOutputPort(2222).setOutputServer("127.0.0.1");
-		final TCPForwarder tcpForwarder = tcpForwarderBuilder.build();
+  /**
+   * Test {@link TCPForwarder} class
+   * 
+   * @throws InterruptedException
+   *           If interrupted
+   */
+  @Test
+  public void testIt() throws InterruptedException {
+    final TCPForwarderBuilder tcpForwarderBuilder = new TCPForwarderBuilder();
+    tcpForwarderBuilder.setInputPort(1111).setOutputPort(2222).setOutputServer("127.0.0.1");
+    final TCPForwarder tcpForwarder = tcpForwarderBuilder.build();
     Assert.assertFalse(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.start();
-		tcpForwarder.start();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertTrue(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.start();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertTrue(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.freeze();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertFalse(tcpForwarder.isActive());
-		Assert.assertTrue(tcpForwarder.isFrozen());
-		tcpForwarder.freeze();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertFalse(tcpForwarder.isActive());
-		Assert.assertTrue(tcpForwarder.isFrozen());
-		tcpForwarder.resume();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertTrue(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.resume();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertTrue(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.stop();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		tcpForwarder.start();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertTrue(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-		tcpForwarder.freeze();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertFalse(tcpForwarder.isActive());
-		Assert.assertTrue(tcpForwarder.isFrozen());
-		tcpForwarder.stop();
-		Thread.sleep(TRANSITION_SLEEP_TIME);
-		Assert.assertFalse(tcpForwarder.isActive());
-		Assert.assertFalse(tcpForwarder.isFrozen());
-	}
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.start();
+    tcpForwarder.start();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertTrue(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.start();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertTrue(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.freeze();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertFalse(tcpForwarder.isActive());
+    Assert.assertTrue(tcpForwarder.isFrozen());
+    tcpForwarder.freeze();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertFalse(tcpForwarder.isActive());
+    Assert.assertTrue(tcpForwarder.isFrozen());
+    tcpForwarder.resume();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertTrue(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.resume();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertTrue(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.stop();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    tcpForwarder.start();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertTrue(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+    tcpForwarder.freeze();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertFalse(tcpForwarder.isActive());
+    Assert.assertTrue(tcpForwarder.isFrozen());
+    tcpForwarder.stop();
+    Thread.sleep(TRANSITION_SLEEP_TIME);
+    Assert.assertFalse(tcpForwarder.isActive());
+    Assert.assertFalse(tcpForwarder.isFrozen());
+  }
 }

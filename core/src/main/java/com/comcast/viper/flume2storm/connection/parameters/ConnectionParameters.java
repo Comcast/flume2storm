@@ -15,9 +15,19 @@
  */
 package com.comcast.viper.flume2storm.connection.parameters;
 
+import com.comcast.viper.flume2storm.connection.receptor.EventReceptor;
+import com.comcast.viper.flume2storm.connection.sender.EventSender;
+import com.comcast.viper.flume2storm.location.ServiceProvider;
+
 /**
- * Interface of the configuration for a Flume2Storm connection (from an Event
- * Receptor to an Event Sender).
+ * Interface of the configuration for a Flume2Storm connection (from an
+ * {@link EventReceptor} to an {@link EventSender}).
  */
 public interface ConnectionParameters {
+  /**
+   * @return A unique identifier of the associated {@link EventSender} /
+   *         {@link ServiceProvider} (hostname:port for instance)
+   * 
+   */
+  String getId();
 }

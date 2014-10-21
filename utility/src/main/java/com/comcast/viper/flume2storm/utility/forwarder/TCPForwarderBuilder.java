@@ -19,23 +19,29 @@ package com.comcast.viper.flume2storm.utility.forwarder;
  * Builder class for the {@link TCPForwarder}
  */
 public class TCPForwarderBuilder extends TCPForwarderConfig {
-	public TCPForwarderBuilder() {
-		super();
-	}
+  /**
+   * Constructs a new {@link TCPForwarderBuilder}
+   */
+  public TCPForwarderBuilder() {
+    super();
+  }
 
-	public void validate() {
-		assert inputPort != null : "TCPForwarder input port not specified";
-		assert outputServer != null : "TCPForwarder output server not specified";
-		assert outputPort != null : "TCPForwarder output port not specified";
-		// TODO check more: not the same port with localhost, port value in
-		// range, ...
-	}
+  /**
+   * Validates that the builder is configured appropriately
+   */
+  public void validate() {
+    assert inputPort != null : "TCPForwarder input port not specified";
+    assert outputServer != null : "TCPForwarder output server not specified";
+    assert outputPort != null : "TCPForwarder output port not specified";
+    // TODO check more: not the same port with localhost, port value in
+    // range, ...
+  }
 
-	/**
-	 * @return A newly built {@link TCPForwarder}
-	 */
-	public TCPForwarder build() {
-		validate();
-		return new TCPForwarderImpl(this);
-	}
+  /**
+   * @return A newly built {@link TCPForwarder}
+   */
+  public TCPForwarder build() {
+    validate();
+    return new TCPForwarderImpl(this);
+  }
 }

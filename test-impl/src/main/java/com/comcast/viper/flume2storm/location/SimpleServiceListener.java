@@ -21,8 +21,9 @@ import java.util.List;
 import com.comcast.viper.flume2storm.location.ServiceListener;
 
 /**
- * A simple implementation of ServiceListener that stores in memory the last
- * SimpleServiceProviders that were added or removed (for test/example purpose)
+ * A simple implementation of {@link ServiceListener} that stores in memory the
+ * last {@link SimpleServiceProvider}s that were added or removed (for
+ * test/example purpose)
  */
 public class SimpleServiceListener implements ServiceListener<SimpleServiceProvider> {
   protected final List<SimpleServiceProvider> lastAdded;

@@ -19,64 +19,37 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
-import com.comcast.viper.flume2storm.connection.receptor.EventReceptor;
 import com.comcast.viper.flume2storm.connection.sender.EventSender;
 import com.comcast.viper.flume2storm.connection.sender.SimpleEventSender;
 import com.comcast.viper.flume2storm.connection.sender.SimpleEventSenderRouter;
 import com.comcast.viper.flume2storm.event.F2SEvent;
 
 /**
+ * An implementation of the {@link EventReceptor} for test purpose
  */
 public class SimpleEventReceptor implements EventReceptor<SimpleConnectionParameters> {
+  protected static final Logger LOG = LoggerFactory.getLogger(SimpleEventReceptor.class);
   protected final Queue<F2SEvent> events;
   protected final SimpleConnectionParameters connectionParameters;
-  protected final AtomicBoolean started;
-  protected final AtomicBoolean connected;
-  protected Thread internalThread;
+  protected final EventReceptorStats stats;
 
-  private class MaintainConnection extends Thread {
-    private SimpleEventReceptor simpleEventReceptor;
-
-    public MaintainConnection(SimpleEventReceptor simpleEventReceptor) {
-      this.simpleEventReceptor = simpleEventReceptor;
-    }
-
-    /**
-     * @see java.lang.Thread#run()
-     */
-    @Override
-    public void run() {
-      while (started.get()) {
-        try {
-          // Try connecting
-          if (!connected.get()) {
-          }
-          Thread.sleep(50);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
-      // Disconnecting
-      if (connected.get()) {
-        SimpleEventSender eventSender = SimpleEventSenderRouter.getInstance().get(connectionParameters);
-        if (eventSender != null) {
-          System.out.println("Disconnecting....");
-          eventSender.disconnect(simpleEventReceptor);
-          connected.set(false);
-        }
-      }
-    }
-  }
-
+  /**
+   * @param connectionParameters
+   *          The connections parameters to use to connect the
+   *          {@link EventSender}
+   */
   public SimpleEventReceptor(SimpleConnectionParameters connectionParameters) {
     events = new LinkedList<F2SEvent>();
     this.connectionParameters = connectionParameters;
-    started = new AtomicBoolean(false);
-    connected = new AtomicBoolean(false);
-    System.out.println("Got conn param: " + connectionParameters);
+    stats = new EventReceptorStats(connectionParameters.getId());
+    LOG.debug("Created with {}", connectionParameters);
   }
 
   /**
@@ -92,18 +65,13 @@ public class SimpleEventReceptor implements EventReceptor<SimpleConnectionParame
    */
   @Override
   public boolean start() {
-    // if (started.get())
-    // return false;
-    // started.set(true);
     SimpleEventSender eventSender = SimpleEventSenderRouter.getInstance().get(connectionParameters);
     if (eventSender != null) {
       System.out.println("Connecting to " + eventSender);
       eventSender.connect(this);
-      connected.set(true);
+      stats.setConnected();
     }
-    //
-    // internalThread = new MaintainConnection(this);
-    // internalThread.start();
+    LOG.info("Receptor of '{}' started and connected to {}", connectionParameters.getId(), eventSender);
     return true;
   }
 
@@ -116,27 +84,17 @@ public class SimpleEventReceptor implements EventReceptor<SimpleConnectionParame
     if (eventSender != null) {
       System.out.println("Disconnecting from " + eventSender);
       eventSender.disconnect(this);
-      connected.set(false);
+      stats.setDisconnected();
     }
+    LOG.info("Receptor of '{}' stopped and disconnected from {}", connectionParameters.getId(), eventSender);
     return true;
-    // if (!started.get())
-    // return false;
-    // started.set(false);
-    // try {
-    // internalThread.join();
-    // return true;
-    // } catch (InterruptedException e) {
-    // e.printStackTrace();
-    // return false;
-    // }
   }
 
   /**
-   * @see com.comcast.viper.flume2storm.connection.receptor.EventReceptor#isConnected()
+   * @see com.comcast.viper.flume2storm.connection.receptor.EventReceptor#getStats()
    */
-  @Override
-  public boolean isConnected() {
-    return connected.get();
+  public EventReceptorStats getStats() {
+    return stats;
   }
 
   /**
@@ -158,6 +116,7 @@ public class SimpleEventReceptor implements EventReceptor<SimpleConnectionParame
       if (e == null) {
         break;
       }
+      stats.decrEventsQueued();
       result.add(e);
     }
     return result;
@@ -171,6 +130,18 @@ public class SimpleEventReceptor implements EventReceptor<SimpleConnectionParame
    *          The event to receive
    */
   public void receive(F2SEvent event) {
-    events.add(event);
+    stats.incrEventsIn();
+    if (events.add(event))
+      stats.incrEventsQueued();
+    LOG.trace("Receptor of '{}' received an event", connectionParameters.getId());
+  }
+
+  /**
+   * @see java.lang.Object#toString()
+   */
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+        .append("connectionParameters", connectionParameters).append("stats", stats).build();
   }
 }

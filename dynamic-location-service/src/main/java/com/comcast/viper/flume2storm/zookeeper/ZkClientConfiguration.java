@@ -19,7 +19,7 @@ import java.io.Serializable;
 
 import org.apache.commons.configuration.Configuration;
 
-import com.comcast.viper.flume2storm.location.ServiceProvider;
+import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.google.common.base.Preconditions;
 
 /**
@@ -27,15 +27,25 @@ import com.google.common.base.Preconditions;
  */
 public class ZkClientConfiguration implements Serializable {
   private static final long serialVersionUID = 4096690012104970344L;
+  /** Configuration attribute name for {@link #getConnectionStr()} */
   public static final String CONNECTION_STRING = "connection.string";
+  /** Default value for {@value #CONNECTION_STRING} */
   public static final String CONNECTION_STRING_DEFAULT = "localhost:2181";
+  /** Configuration attribute name for {@link #getSessionTimeout()} */
   public static final String SESSION_TIMEOUT = "session.timeout";
+  /** Default value for {@value #SESSION_TIMEOUT} */
   public static final int SESSION_TIMEOUT_DEFAULT = 30000;
+  /** Configuration attribute name for {@link #getConnectionTimeout()} */
   public static final String CONNECTION_TIMEOUT = "connection.timeout";
-  public static final int CONNECTION_ITMEOUT_DEFAULT = 10000;
+  /** Default value for {@value #CONNECTION_TIMEOUT} */
+  public static final int CONNECTION_TIMEOUT_DEFAULT = 10000;
+  /** Configuration attribute name for {@link #getReconnectionDelay()} */
   public static final String RECONNECTION_DELAY = "reconnection.delay.in.ms";
+  /** Default value for {@value #RECONNECTION_DELAY} */
   public static final int RECONNECTION_DELAY_DEFAULT = 10000;
+  /** Configuration attribute name for {@link #getTerminationTimeout()} */
   public static final String TERMINATION_TIMEOUT = "termination.timeout";
+  /** Default value for {@value #TERMINATION_TIMEOUT} */
   public static final int TERMINATION_TIMEOUT_DEFAULT = 10000;
 
   protected String connectionStr;
@@ -49,12 +59,16 @@ public class ZkClientConfiguration implements Serializable {
    * 
    * @param config
    *          The configuration to use
+   * @return The newly built {@link ZkClientConfiguration} based on the
+   *         configuration specified
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
    */
-  public static ZkClientConfiguration from(Configuration config) {
+  public static ZkClientConfiguration from(Configuration config) throws F2SConfigurationException {
     ZkClientConfiguration result = new ZkClientConfiguration();
     result.connectionStr = config.getString(CONNECTION_STRING, CONNECTION_STRING_DEFAULT);
     result.sessionTimeout = config.getInt(SESSION_TIMEOUT, SESSION_TIMEOUT_DEFAULT);
-    result.connectionTimeout = config.getInt(CONNECTION_TIMEOUT, CONNECTION_ITMEOUT_DEFAULT);
+    result.connectionTimeout = config.getInt(CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_DEFAULT);
     result.reconnectionDelay = config.getInt(RECONNECTION_DELAY, RECONNECTION_DELAY_DEFAULT);
     result.terminationTimeout = config.getInt(TERMINATION_TIMEOUT, TERMINATION_TIMEOUT_DEFAULT);
     return result;
@@ -66,7 +80,7 @@ public class ZkClientConfiguration implements Serializable {
   public ZkClientConfiguration() {
     connectionStr = CONNECTION_STRING_DEFAULT;
     sessionTimeout = SESSION_TIMEOUT_DEFAULT;
-    connectionTimeout = CONNECTION_ITMEOUT_DEFAULT;
+    connectionTimeout = CONNECTION_TIMEOUT_DEFAULT;
     reconnectionDelay = RECONNECTION_DELAY_DEFAULT;
     terminationTimeout = TERMINATION_TIMEOUT_DEFAULT;
   }

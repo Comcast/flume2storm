@@ -24,50 +24,50 @@ import com.google.common.base.Preconditions;
  * Utilies for ZkClient
  */
 public class ZkUtilies {
-	public static final Character SEPARATOR_CHAR = '/';
-	public static final String SEPARATOR = SEPARATOR_CHAR.toString();
+  protected static final Character SEPARATOR_CHAR = '/';
+  protected static final String SEPARATOR = SEPARATOR_CHAR.toString();
 
-	/**
-	 * Builds a valid (guaranteed) ZNode path made of the components passed in
-	 * parameter. This method handles the path separator between component, so
-	 * it can be called with or without them.
-	 * 
-	 * @param components
-	 *            A bunch of ZNode path elements. Some may be null.
-	 * @return The concatenated path of all the elements
-	 * @throws IllegalArgumentException
-	 *             if the path is invalid (empty for example)
-	 */
-	public static String buildZkPath(final String... components) {
-		Preconditions.checkArgument(components != null, "No path element specified");
-		boolean isFirst = true;
-		final StringBuilder result = new StringBuilder();
-		for (int i = 0; i < components.length; i++) {
-			if (StringUtils.isEmpty(components[i])) {
-				continue;
-			}
-			assert components[i] != null;
-			// Checking path separator
-			if (isFirst) {
-				// First element must start with /
-				if (!components[i].startsWith(SEPARATOR)) {
-					result.append(SEPARATOR);
-				}
-				result.append(components[i]);
-			} else {
-				if (!SEPARATOR_CHAR.equals(result.charAt(result.length() - 1)) && !components[i].startsWith(SEPARATOR)) {
-					result.append(SEPARATOR);
-					result.append(components[i]);
-				} else if (SEPARATOR_CHAR.equals(result.charAt(result.length() - 1)) && components[i].startsWith(SEPARATOR)) {
-					result.append(components[i].substring(1));
-				} else {
-					result.append(components[i]);
-				}
-			}
-			isFirst = false;
-		}
-		final String path = result.toString();
-		PathUtils.validatePath(path);
-		return path;
-	}
+  /**
+   * Builds a valid (guaranteed) ZNode path made of the components passed in
+   * parameter. This method handles the path separator between component, so it
+   * can be called with or without them.
+   * 
+   * @param components
+   *          A bunch of ZNode path elements. Some may be null.
+   * @return The concatenated path of all the elements
+   * @throws IllegalArgumentException
+   *           if the path is invalid (empty for example)
+   */
+  public static String buildZkPath(final String... components) {
+    Preconditions.checkArgument(components != null, "No path element specified");
+    boolean isFirst = true;
+    final StringBuilder result = new StringBuilder();
+    for (int i = 0; i < components.length; i++) {
+      if (StringUtils.isEmpty(components[i])) {
+        continue;
+      }
+      assert components[i] != null;
+      // Checking path separator
+      if (isFirst) {
+        // First element must start with /
+        if (!components[i].startsWith(SEPARATOR)) {
+          result.append(SEPARATOR);
+        }
+        result.append(components[i]);
+      } else {
+        if (!SEPARATOR_CHAR.equals(result.charAt(result.length() - 1)) && !components[i].startsWith(SEPARATOR)) {
+          result.append(SEPARATOR);
+          result.append(components[i]);
+        } else if (SEPARATOR_CHAR.equals(result.charAt(result.length() - 1)) && components[i].startsWith(SEPARATOR)) {
+          result.append(components[i].substring(1));
+        } else {
+          result.append(components[i]);
+        }
+      }
+      isFirst = false;
+    }
+    final String path = result.toString();
+    PathUtils.validatePath(path);
+    return path;
+  }
 }

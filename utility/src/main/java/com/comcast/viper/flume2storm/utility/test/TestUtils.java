@@ -15,17 +15,41 @@
  */
 package com.comcast.viper.flume2storm.utility.test;
 
+import java.net.ServerSocket;
+import java.util.Random;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Some utility functions for test cases
  */
 public class TestUtils {
   private static final int DEFAULT_RETRY_TIMEOUT = 100;
+  private static Random random = new Random();
+
+  /**
+   * @return An ephemeral port available for test usage
+   */
+  public static int getAvailablePort() {
+    try (ServerSocket s = new ServerSocket(0)) {
+      return s.getLocalPort();
+    } catch (Exception e) {
+      throw new AssertionError("Failed to find available port", e);
+    }
+  }
+
+  /**
+   * @param n
+   *          Max int allowed
+   * @return A random number between 1 and n
+   */
+  public static final int getRandomPositiveInt(int n) {
+    Preconditions.checkArgument(n > 1, "Cannot generate this kind of number!");
+    return random.nextInt(n - 1) + 1;
+  }
 
   /**
    * Waits that the condition is fulfilled - careful, this may never return!
-   * Note that this method does not return a value because the condition is
-   * obviously fulfilled
    * 
    * @param condition
    *          The condition to evaluate. It should be fast to evaluate
@@ -36,6 +60,17 @@ public class TestUtils {
     waitFor(condition, Integer.MAX_VALUE);
   }
 
+  /**
+   * Waits that the condition is fulfilled, for up to a specified amount of time
+   * 
+   * @param condition
+   *          The condition to evaluate. It should be fast to evaluate
+   * @param maxWaitInMs
+   *          The maximum number of milliseconds to wait
+   * @return True if the condition is fulfilled in time, false otherwise
+   * @throws InterruptedException
+   *           If wait is interrupted
+   */
   public static boolean waitFor(final TestCondition condition, final int maxWaitInMs) throws InterruptedException {
     return waitFor(condition, maxWaitInMs, DEFAULT_RETRY_TIMEOUT);
   }
@@ -46,13 +81,10 @@ public class TestUtils {
    * @param condition
    *          The condition to evaluate. It should be fast to evaluate
    * @param maxWaitInMs
-   *          The maximum time to
+   *          The maximum number of milliseconds to wait
    * @param retryTimeout
    *          The number of milliseconds to wait before retry the test
-   * @return The evaluation of the {@link TestCondition} when done waiting;
-   *         either because the condition is fulfilled (in which case the result
-   *         is probably true), or because the timeout occurred (in which case
-   *         the result is probably false).
+   * @return True if the condition is fulfilled in time, false otherwise
    * @throws InterruptedException
    *           If wait is interrupted
    */

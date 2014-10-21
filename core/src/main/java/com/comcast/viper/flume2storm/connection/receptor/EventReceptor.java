@@ -23,10 +23,10 @@ import com.comcast.viper.flume2storm.event.F2SEvent;
 
 /**
  * The client-side of the Flume2Storm connector, which receives the Flume2Storm
- * events from the Event Sender.
+ * events from the {@link EventSender}.
  * 
  * @param <CP>
- *          The Connection Parameters class
+ *          The {@link ConnectionParameters} class
  */
 public interface EventReceptor<CP extends ConnectionParameters> {
   /**
@@ -47,10 +47,9 @@ public interface EventReceptor<CP extends ConnectionParameters> {
   boolean stop();
 
   /**
-   * @return True if the {@link EventReceptor} is connected to the
-   *         {@link EventSender}
+   * @return Statistics related to this {@link EventReceptor}
    */
-  boolean isConnected();
+  EventReceptorStatsMBean getStats();
 
   // TODO use listener instead
   /**

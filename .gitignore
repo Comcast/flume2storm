@@ -1,1 +1,11 @@
-/target
+*~
+.metadata/
+.classpath
+.project
+.settings
+.eclipse
+.recommenders
+bin
+target
+RemoteSystemsTempFiles
+.DS_Store

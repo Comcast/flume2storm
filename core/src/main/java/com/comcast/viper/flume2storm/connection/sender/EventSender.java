@@ -44,9 +44,9 @@ public interface EventSender<CP extends ConnectionParameters> extends ServicePro
   boolean stop();
 
   /**
-   * @return The number of receptors currently connected
+   * @return Statistics related to this {@link EventSender}
    */
-  int getNbReceptors();
+  EventSenderStatsMBean getStats();
 
   /**
    * @param events

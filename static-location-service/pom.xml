@@ -30,7 +30,7 @@
     <description>A location service implementation based on a static configuration file</description>
 
     <properties>
-        <license.header.location>../license.header</license.header.location>
+        <f2s.basedir>${project.parent.basedir}</f2s.basedir>
         <commons-configuration.version>1.6</commons-configuration.version>
     </properties>
 
@@ -45,7 +45,6 @@
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>${commons-configuration.version}</version>
         </dependency>
 		<!-- Test -->
         <dependency>
@@ -55,4 +54,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>${f2s.basedir}/resources/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -98,6 +98,9 @@ public abstract class AbstractLocationService<SP extends ServiceProvider<?>> imp
     builder.addAll(oldList);
     builder.add(listener);
     listeners.getAndSet(builder.build());
+    for (SP serviceProvider : serviceProviderManager.get()) {
+      listener.onProviderAdded(serviceProvider);
+    }
   }
 
   /**
@@ -113,8 +116,23 @@ public abstract class AbstractLocationService<SP extends ServiceProvider<?>> imp
    * @see com.comcast.viper.flume2storm.location.LocationService#getServiceProviders()
    */
   @Override
-  public final List<SP> getServiceProviders() {
+  public List<SP> getServiceProviders() {
     return serviceProviderManager.get();
   }
 
+  /**
+   * @see com.comcast.viper.flume2storm.location.LocationService#containsServiceProvider(com.comcast.viper.flume2storm.location.ServiceProvider)
+   */
+  @Override
+  public boolean containsServiceProvider(SP serviceProvider) {
+    return serviceProviderManager.contains(serviceProvider.getConnectionParameters().getId());
+  }
+
+  /**
+   * @see com.comcast.viper.flume2storm.location.LocationService#containsServiceProvider(java.lang.String)
+   */
+  @Override
+  public boolean containsServiceProvider(String serviceProviderId) {
+    return serviceProviderManager.contains(serviceProviderId);
+  }
 }

@@ -15,7 +15,7 @@
  */
 package com.comcast.viper.flume2storm.location;
 
-import com.comcast.viper.flume2storm.connection.KryoNetConnectionParameters;
+import com.comcast.viper.flume2storm.connection.parameters.KryoNetConnectionParameters;
 import com.google.common.base.Preconditions;
 
 /**
@@ -32,9 +32,9 @@ public class KryoNetServiceProviderSerialization implements ServiceProviderSeria
   public byte[] serialize(KryoNetServiceProvider serviceProvider) {
     KryoNetConnectionParameters cp = serviceProvider.getConnectionParameters();
     StringBuilder sb = new StringBuilder();
-    sb.append(cp.getServerAddress());
+    sb.append(cp.getAddress());
     sb.append(SEPARATOR);
-    sb.append(cp.getServerPort());
+    sb.append(cp.getPort());
     sb.append(SEPARATOR);
     sb.append(cp.getObjectBufferSize());
     sb.append(SEPARATOR);
@@ -52,7 +52,7 @@ public class KryoNetServiceProviderSerialization implements ServiceProviderSeria
     Preconditions.checkArgument(elements.length == 4,
         "Failed to deserialize KryoNet Service Provider: invalid number of elements");
     KryoNetConnectionParameters cp = new KryoNetConnectionParameters();
-    cp.setServerAddress(elements[0]);
+    cp.setAddress(elements[0]);
     cp.setServerPort(Integer.parseInt(elements[1]));
     cp.setObjectBufferSize(Integer.parseInt(elements[2]));
     cp.setWriteBufferSize(Integer.parseInt(elements[3]));

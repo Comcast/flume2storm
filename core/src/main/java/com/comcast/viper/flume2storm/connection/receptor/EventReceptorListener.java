@@ -20,7 +20,7 @@ import java.util.List;
 import com.comcast.viper.flume2storm.event.F2SEvent;
 
 /**
- * Listener for EventReceptor events.
+ * Listener for {@link EventReceptor} events.
  */
 public interface EventReceptorListener {
   /**

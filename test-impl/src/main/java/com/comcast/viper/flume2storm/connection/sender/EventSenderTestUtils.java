@@ -18,9 +18,16 @@ package com.comcast.viper.flume2storm.connection.sender;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
 
+/**
+ * Utilities to facilitate testing of an {@link EventSender}
+ */
 public class EventSenderTestUtils {
+  protected static final int TIMEOUT_DEFAULT = 500;
 
-  public static class NoReceptorCondition implements TestCondition {
+  /**
+   * Condition fulfilled when the {@link EventSender} does not have any
+   */
+  static class NoReceptorCondition implements TestCondition {
     private final EventSender<?> sender;
 
     public NoReceptorCondition(final EventSender<?> sender) {
@@ -29,16 +36,16 @@ public class EventSenderTestUtils {
 
     @Override
     public boolean evaluate() {
-      return sender.getNbReceptors() == 0;
+      return sender.getStats().getNbClients() == 0;
     }
   }
 
   /**
-   * Waits that there is no receptor connected to the sender for a max of
-   * timeout. It throws an assertion failure otherwise
+   * Waits that there is no receptor connected to the sender. It throws an
+   * assertion failure otherwise
    * 
    * @param sender
-   *          The {@link KryoNetEventSender}
+   *          The {@link EventSender}
    * @param timeout
    *          Max wait time, in milliseconds
    * @throws InterruptedException
@@ -50,14 +57,14 @@ public class EventSenderTestUtils {
   }
 
   /**
-   * Waits that there is no receptor connected to the sender for a default max
-   * of timeout. It throws an assertion failure otherwise
+   * Waits that there is no receptor connected to the sender with a timeout of
+   * {@value #TIMEOUT_DEFAULT} . It throws an assertion failure otherwise
    * 
    * @param sender
-   *          The {@link KryoNetEventSender}
+   *          The {@link EventSender}
    * @throws InterruptedException
    */
   public static void waitNoReceptor(EventSender<?> sender) throws InterruptedException {
-    waitNoReceptor(sender, 500);
+    waitNoReceptor(sender, TIMEOUT_DEFAULT);
   }
 }

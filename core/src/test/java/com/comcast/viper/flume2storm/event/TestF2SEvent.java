@@ -15,11 +15,13 @@
  */
 package com.comcast.viper.flume2storm.event;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Arrays;
 import java.util.Map;
 
 import junit.framework.Assert;
 
-import org.joda.time.Instant;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -34,8 +36,25 @@ public final class TestF2SEvent {
   @Test
   public void testEquals() {
     byte[] body = "Test string".getBytes();
-    Instant timestamp = Instant.now();
     Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
-    Assert.assertEquals(new F2SEvent(headers, timestamp, body), new F2SEvent(headers, timestamp, body));
+    Assert.assertEquals(new F2SEvent(headers, body), new F2SEvent(headers, body));
+  }
+
+  /**
+   * Test toString method
+   */
+  @Test
+  public void testToString() {
+    Map<String, String> headers = ImmutableMap.of("K1", "v1", "k2", "v2");
+
+    // Printable event payload
+    String bodyStr = "Test string 1234";
+    System.out.println(new F2SEvent(headers, bodyStr.getBytes()).toString());
+    assertThat(new F2SEvent(headers, bodyStr.getBytes()).toString()).contains(bodyStr);
+
+    // Non-printable payload
+    byte[] data = Arrays.copyOf(bodyStr.getBytes(), bodyStr.length() + 1);
+    System.out.println(new F2SEvent(headers, data).toString());
+    assertThat(new F2SEvent(headers, data).toString()).doesNotContain(bodyStr);
   }
 }

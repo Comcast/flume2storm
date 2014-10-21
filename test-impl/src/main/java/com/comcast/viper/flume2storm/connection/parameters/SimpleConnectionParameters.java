@@ -16,30 +16,46 @@
 package com.comcast.viper.flume2storm.connection.parameters;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 
 /**
- * Simple configuration for a Flume2Storm connection
+ * Simple implementation of {@link ConnectionParameters} for test purpose
  */
 public class SimpleConnectionParameters implements ConnectionParameters {
+  /** Configuration attribute name for {@link #getHostname()} */
   public static final String HOSTNAME = "hostname";
+  /** Default value for {@value #HOSTNAME} */
   public static final String HOSTNAME_DEFAULT = "localhost";
-  public static final String PORT = "hostname";
+  /** Configuration attribute name for {@link #getPort()} */
+  public static final String PORT = "port";
+  /** Default value for {@value #PORT} */
   public static final int PORT_DEFAULT = 7000;
 
-  protected String serverAddress;
-  protected int serverPort;
+  protected String address;
+  protected int port;
 
+  /**
+   * @param configuration
+   *          The configuration to use
+   * @return The newly built {@link SimpleConnectionParameters} based on the
+   *         configuration specified
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
   public static SimpleConnectionParameters from(Configuration configuration) throws F2SConfigurationException {
     SimpleConnectionParameters result = new SimpleConnectionParameters();
     try {
-      result.setServerAddress(configuration.getString(HOSTNAME, HOSTNAME_DEFAULT));
+      result.setHostname(configuration.getString(HOSTNAME, HOSTNAME_DEFAULT));
     } catch (Exception e) {
       throw F2SConfigurationException.with(HOSTNAME, configuration.getProperty(HOSTNAME), e);
     }
     try {
-      result.setServerPort(configuration.getInt(PORT, PORT_DEFAULT));
+      result.setPort(configuration.getInt(PORT, PORT_DEFAULT));
     } catch (Exception e) {
       throw F2SConfigurationException.with(PORT, configuration.getProperty(PORT), e);
     }
@@ -51,13 +67,22 @@ public class SimpleConnectionParameters implements ConnectionParameters {
    * settings
    */
   public SimpleConnectionParameters() {
-    serverAddress = HOSTNAME_DEFAULT;
-    serverPort = PORT_DEFAULT;
+    address = HOSTNAME_DEFAULT;
+    port = PORT_DEFAULT;
   }
 
+  /**
+   * Constructor that initializes the connection parameters using the specified
+   * settings
+   * 
+   * @param serverAddress
+   *          See {@link #getHostname()}
+   * @param serverPort
+   *          See {@link #getPort()}
+   */
   public SimpleConnectionParameters(String serverAddress, int serverPort) {
-    this.serverAddress = serverAddress;
-    this.serverPort = serverPort;
+    this.address = serverAddress;
+    this.port = serverPort;
   }
 
   /**
@@ -67,51 +92,61 @@ public class SimpleConnectionParameters implements ConnectionParameters {
    *          Another configuration object for KryoNet connection parameters
    */
   public SimpleConnectionParameters(final SimpleConnectionParameters copy) {
-    serverAddress = copy.serverAddress;
-    serverPort = copy.serverPort;
+    address = copy.address;
+    port = copy.port;
+  }
+
+  /**
+   * @see com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters#getId()
+   */
+  @Override
+  public String getId() {
+    return new StringBuilder().append(address).append(":").append(port).toString();
   }
 
   /**
    * @return Address (or host name) to use for the KryoNet event sender.
    *         Defaults to {@value #HOSTNAME_DEFAULT}
    */
-  public String getServerAddress() {
-    return serverAddress;
+  public String getHostname() {
+    return address;
   }
 
   /**
    * @param address
-   *          See {@link #getServerAddress()}
+   *          See {@link #getHostname()}
    * @return This configuration object
    */
-  public void setServerAddress(final String address) {
-    serverAddress = address;
+  public SimpleConnectionParameters setHostname(final String address) {
+    this.address = address;
+    return this;
   }
 
   /**
    * @return Port to use for the KryoNet event sender. Defaults to
    *         {@value #PORT_DEFAULT}
    */
-  public int getServerPort() {
-    return serverPort;
+  public int getPort() {
+    return port;
   }
 
   /**
    * @param port
-   *          See {@link #getServerPort()}
+   *          See {@link #getPort()}
    * @return This configuration object
    */
-  public void setServerPort(final int port) {
+  public SimpleConnectionParameters setPort(final int port) {
     if (port < 0)
       throw new IllegalArgumentException("...");
-    serverPort = port;
+    this.port = port;
+    return this;
   }
 
   /**
    * @return The connection string (for identification purpose)
    */
   public String getConnectionStr() {
-    return serverAddress + ":" + serverPort;
+    return address + ":" + port;
   }
 
   /**
@@ -119,11 +154,7 @@ public class SimpleConnectionParameters implements ConnectionParameters {
    */
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((serverAddress == null) ? 0 : serverAddress.hashCode());
-    result = prime * result + serverPort;
-    return result;
+    return new HashCodeBuilder().append(address).append(port).hashCode();
   }
 
   /**
@@ -138,14 +169,7 @@ public class SimpleConnectionParameters implements ConnectionParameters {
     if (getClass() != obj.getClass())
       return false;
     SimpleConnectionParameters other = (SimpleConnectionParameters) obj;
-    if (serverAddress == null) {
-      if (other.serverAddress != null)
-        return false;
-    } else if (!serverAddress.equals(other.serverAddress))
-      return false;
-    if (serverPort != other.serverPort)
-      return false;
-    return true;
+    return new EqualsBuilder().append(this.address, other.address).append(this.port, other.port).isEquals();
   }
 
   /**
@@ -153,6 +177,7 @@ public class SimpleConnectionParameters implements ConnectionParameters {
    */
   @Override
   public String toString() {
-    return "SimpleConnectionParameters [serverAddress=" + serverAddress + ", serverPort=" + serverPort + "]";
+    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("address", address).append("port", port)
+        .build();
   }
 }

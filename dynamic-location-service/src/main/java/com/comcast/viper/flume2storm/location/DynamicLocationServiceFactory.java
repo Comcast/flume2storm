@@ -17,6 +17,8 @@ package com.comcast.viper.flume2storm.location;
 
 import org.apache.commons.configuration.Configuration;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+
 /**
  * Factory class for {@link DynamicLocationService}
  * 
@@ -32,7 +34,8 @@ public class DynamicLocationServiceFactory<SP extends ServiceProvider<?>> implem
    *      com.comcast.viper.flume2storm.location.ServiceProviderSerialization)
    */
   @Override
-  public LocationService<SP> create(Configuration config, ServiceProviderSerialization<SP> serviceProviderSerialization) {
+  public LocationService<SP> create(Configuration config, ServiceProviderSerialization<SP> serviceProviderSerialization)
+      throws F2SConfigurationException {
     return new DynamicLocationService<SP>(DynamicLocationServiceConfiguration.from(config.subset(CONFIG_BASE_NAME)),
         serviceProviderSerialization);
   }

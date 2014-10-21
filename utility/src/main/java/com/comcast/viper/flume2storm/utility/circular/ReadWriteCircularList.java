@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * Implementation of CircularList that synchronizes access using a read-write
  * lock in order to achieve thread-safety.
@@ -29,13 +32,22 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class ReadWriteCircularList<T> implements CircularList<T> {
   protected final List<T> list;
-  protected final ReadWriteLock lock;
+  protected final transient ReadWriteLock lock;
   protected int pointer;
 
+  /**
+   * Constructor for a new empty circular list
+   */
   public ReadWriteCircularList() {
     this(new ArrayList<T>());
   }
 
+  /**
+   * Constructor for a new circular list backed by the list provided
+   * 
+   * @param list
+   *          A list of items
+   */
   public ReadWriteCircularList(final List<T> list) {
     this.list = list;
     lock = new ReentrantReadWriteLock();
@@ -70,10 +82,10 @@ public class ReadWriteCircularList<T> implements CircularList<T> {
   /**
    * @see com.comcast.viper.flume2storm.utility.circular.CircularList#add(java.lang.Object)
    */
-  public void add(final T toAdd) {
+  public boolean add(final T toAdd) {
     try {
       lock.writeLock().lock();
-      list.add(toAdd);
+      return list.add(toAdd);
       // Programming note: no problem with pointer here
     } finally {
       lock.writeLock().unlock();
@@ -83,13 +95,14 @@ public class ReadWriteCircularList<T> implements CircularList<T> {
   /**
    * @see com.comcast.viper.flume2storm.utility.circular.CircularList#remove(java.lang.Object)
    */
-  public void remove(final T toRemove) {
+  public boolean remove(final T toRemove) {
     try {
       lock.writeLock().lock();
-      list.remove(toRemove);
+      boolean result = list.remove(toRemove);
       if (pointer >= list.size()) {
         pointer = 0;
       }
+      return result;
     } finally {
       lock.writeLock().unlock();
     }
@@ -113,5 +126,36 @@ public class ReadWriteCircularList<T> implements CircularList<T> {
     } finally {
       lock.readLock().unlock();
     }
+  }
+
+  /**
+   * @see java.lang.Object#hashCode()
+   */
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().append(list).append(pointer).hashCode();
+  }
+
+  /**
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    ReadWriteCircularList<?> other = (ReadWriteCircularList<?>) obj;
+    return new EqualsBuilder().append(this.list, other.list).append(this.pointer, other.pointer).isEquals();
+  }
+
+  /**
+   * @see java.lang.Object#toString()
+   */
+  @Override
+  public String toString() {
+    return "ReadWriteCircularList [list=" + list + ", pointer=" + pointer + "]";
   }
 }

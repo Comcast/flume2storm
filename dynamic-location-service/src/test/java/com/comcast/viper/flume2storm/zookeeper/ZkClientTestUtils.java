@@ -22,128 +22,128 @@ import com.comcast.viper.flume2storm.utility.test.TestUtils;
 
 /**
  * 
- * 
- * @author gcommeau
  */
 public class ZkClientTestUtils extends ZkTestUtils {
-	public static final int TEST_RECONNECTION_DELAY = 2000;
-	public static final ZkClientConfiguration ZK_CONFIGURATION = new ZkClientConfiguration();
-	static {
-		ZK_CONFIGURATION.setConnectionStr(HOST + ":" + PORT);
-		ZK_CONFIGURATION.setReconnectionDelay(TEST_RECONNECTION_DELAY);
-	}
+  public static final int TEST_RECONNECTION_DELAY = 2000;
 
-	protected static ZkClient zkClient;
+  public static ZkClientConfiguration getZkClientConfig(ZkTestServer zkServer) {
+    final ZkClientConfiguration result = new ZkClientConfiguration();
+    result.setConnectionStr(zkServer.getConnectString());
+    result.setReconnectionDelay(TEST_RECONNECTION_DELAY);
+    return result;
+  }
 
-	public static class ClientStartedCondition implements TestCondition {
-		private final ZkClient zkClient;
+  protected static ZkClient zkClient;
 
-		public ClientStartedCondition(final ZkClient zkClient) {
-			this.zkClient = zkClient;
-		}
+  public static class ClientStartedCondition implements TestCondition {
+    private final ZkClient zkClient;
 
-		@Override
-		public boolean evaluate() {
-			return zkClient.getState().isStarted();
-		}
-	}
+    public ClientStartedCondition(final ZkClient zkClient) {
+      this.zkClient = zkClient;
+    }
 
-	public static class ClientConnectedCondition implements TestCondition {
-		private final ZkClient zkClient;
+    @Override
+    public boolean evaluate() {
+      return zkClient.getState().isStarted();
+    }
+  }
 
-		public ClientConnectedCondition(final ZkClient zkClient) {
-			this.zkClient = zkClient;
-		}
+  public static class ClientConnectedCondition implements TestCondition {
+    private final ZkClient zkClient;
 
-		@Override
-		public boolean evaluate() {
-			return zkClient.getState().isConnected();
-		}
-	}
+    public ClientConnectedCondition(final ZkClient zkClient) {
+      this.zkClient = zkClient;
+    }
 
-	public static class ClientDisconnectedCondition implements TestCondition {
-		private final ZkClient zkClient;
+    @Override
+    public boolean evaluate() {
+      return zkClient.getState().isConnected();
+    }
+  }
 
-		public ClientDisconnectedCondition(final ZkClient zkClient) {
-			this.zkClient = zkClient;
-		}
+  public static class ClientDisconnectedCondition implements TestCondition {
+    private final ZkClient zkClient;
 
-		@Override
-		public boolean evaluate() {
-			return !zkClient.getState().isConnected();
-		}
-	}
+    public ClientDisconnectedCondition(final ZkClient zkClient) {
+      this.zkClient = zkClient;
+    }
 
-	public static class ClientSetupCondition implements TestCondition {
-		private final ZkClient zkClient;
+    @Override
+    public boolean evaluate() {
+      return !zkClient.getState().isConnected();
+    }
+  }
 
-		public ClientSetupCondition(final ZkClient zkClient) {
-			this.zkClient = zkClient;
-		}
+  public static class ClientSetupCondition implements TestCondition {
+    private final ZkClient zkClient;
 
-		@Override
-		public boolean evaluate() {
-			return zkClient.getState().isSetup();
-		}
-	}
+    public ClientSetupCondition(final ZkClient zkClient) {
+      this.zkClient = zkClient;
+    }
 
-	public static void waitZkClientStarted(final int timeout) throws Exception {
-		Assert.assertTrue(TestUtils.waitFor(new ClientStartedCondition(zkClient), timeout));
-		assertZkClientStarted();
-	}
+    @Override
+    public boolean evaluate() {
+      return zkClient.getState().isSetup();
+    }
+  }
 
-	public static void waitZkClientStarted() throws Exception {
-		waitZkClientStarted(TEST_TIMEOUT);
-	}
+  public static void waitZkClientStarted(final int timeout) throws Exception {
+    Assert.assertTrue(TestUtils.waitFor(new ClientStartedCondition(zkClient), timeout));
+    assertZkClientStarted();
+  }
 
-	public static void waitZkClientConnected(final int timeout) throws Exception {
-		Assert.assertTrue(TestUtils.waitFor(new ClientConnectedCondition(zkClient), timeout));
-	}
+  public static void waitZkClientStarted() throws Exception {
+    waitZkClientStarted(TEST_TIMEOUT);
+  }
 
-	public static void waitZkClientConnected() throws Exception {
-		waitZkClientConnected(TEST_TIMEOUT);
-	}
+  public static void waitZkClientConnected(final int timeout) throws Exception {
+    Assert.assertTrue(TestUtils.waitFor(new ClientConnectedCondition(zkClient), timeout));
+  }
 
-	public static void waitZkClientDisconnected(final int timeout) throws Exception {
-		Assert.assertTrue(TestUtils.waitFor(new ClientDisconnectedCondition(zkClient), timeout));
-		assertZkClientStarted();
-	}
+  public static void waitZkClientConnected() throws Exception {
+    waitZkClientConnected(TEST_TIMEOUT);
+  }
 
-	public static void waitZkClientDisconnected() throws Exception {
-		waitZkClientDisconnected(TEST_TIMEOUT);
-	}
+  public static void waitZkClientDisconnected(final int timeout) throws Exception {
+    Assert.assertTrue(TestUtils.waitFor(new ClientDisconnectedCondition(zkClient), timeout));
+    assertZkClientStarted();
+  }
 
-	public static void waitZkClientSetup(final int timeout) throws Exception {
-		Assert.assertTrue(TestUtils.waitFor(new ClientSetupCondition(zkClient), timeout));
-		assertZkClientSetup();
-	}
+  public static void waitZkClientDisconnected() throws Exception {
+    waitZkClientDisconnected(TEST_TIMEOUT);
+  }
 
-	public static void waitZkClientSetup() throws Exception {
-		waitZkClientSetup(TEST_TIMEOUT);
-	}
+  public static void waitZkClientSetup(final int timeout) throws Exception {
+    Assert.assertTrue(TestUtils.waitFor(new ClientSetupCondition(zkClient), timeout));
+    assertZkClientSetup();
+  }
 
-	public static void assertZkClientStopped() {
-		Assert.assertFalse(zkClient.getState().isStarted());
-		Assert.assertFalse(zkClient.getState().isConnected());
-		Assert.assertFalse(zkClient.getState().isSetup());
-	}
+  public static void waitZkClientSetup() throws Exception {
+    waitZkClientSetup(TEST_TIMEOUT);
+  }
 
-	public static void assertZkClientStarted() {
-		Assert.assertTrue(zkClient.getState().isStarted());
-		Assert.assertFalse(zkClient.getState().isConnected());
-		Assert.assertFalse(zkClient.getState().isSetup());
-	}
+  public static void assertZkClientStopped() {
+    Assert.assertFalse(zkClient.getState().isStarted());
+    Assert.assertFalse(zkClient.getState().isConnected());
+    Assert.assertFalse(zkClient.getState().isSetup());
+  }
 
-	public static void assertZkClientConnected() {
-		Assert.assertTrue(zkClient.getState().isStarted());
-		Assert.assertTrue(zkClient.getState().isConnected());
-		Assert.assertFalse(zkClient.getState().isSetup());
-	}
+  public static void assertZkClientStarted() {
+    Assert.assertTrue(zkClient.getState().isStarted());
+    Assert.assertFalse(zkClient.getState().isConnected());
+    Assert.assertFalse(zkClient.getState().isSetup());
+  }
 
-	public static void assertZkClientSetup() {
-		Assert.assertTrue(zkClient.getState().isStarted());
-		Assert.assertTrue(zkClient.getState().isConnected());
-		Assert.assertTrue(zkClient.getState().isSetup());
-	}
+  public static void assertZkClientConnected() {
+    Assert.assertTrue(zkClient.getState().isStarted());
+    Assert.assertTrue(zkClient.getState().isConnected());
+    Assert.assertFalse(zkClient.getState().isSetup());
+  }
+
+  public static void assertZkClientSetup() {
+    Assert.assertTrue(zkClient.getState().isStarted());
+    Assert.assertTrue(zkClient.getState().isConnected());
+    Assert.assertTrue(zkClient.getState().isSetup());
+  }
 
 }

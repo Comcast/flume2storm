@@ -28,12 +28,6 @@ import com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters;
  */
 public interface ServiceProvider<CP extends ConnectionParameters> extends Serializable, Comparable<ServiceProvider<CP>> {
   /**
-   * @return A unique identifier for the Service provider (hostname:port for
-   *         instance)
-   */
-  String getId();
-
-  /**
    * @return The connection parameters for this service provider
    */
   CP getConnectionParameters();

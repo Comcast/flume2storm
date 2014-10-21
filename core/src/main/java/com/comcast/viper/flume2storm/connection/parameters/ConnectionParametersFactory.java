@@ -20,11 +20,12 @@ import org.apache.commons.configuration.Configuration;
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 
 /**
- * Interface to build a connection parameter. It follows the abstract factory
- * design pattern.
+ * Interface to build a {@link ConnectionParameters}. It follows the abstract
+ * factory design pattern. Implementation of this factory must have a
+ * no-argument constructor.
  * 
  * @param <CP>
- *          The Connection Parameters class
+ *          The {@link ConnectionParameters} class
  */
 public interface ConnectionParametersFactory<CP extends ConnectionParameters> {
   /**

@@ -15,19 +15,16 @@
  */
 package com.comcast.viper.flume2storm.sink;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
+import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
-import org.apache.commons.configuration.ConfigurationFactory.ConfigurationBuilder;
-import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.MapConfiguration;
 
 import com.comcast.viper.flume2storm.F2SConfigurationException;
-import com.comcast.viper.flume2storm.F2SConfigurationException.Reason;
-import com.google.common.base.Optional;
+import com.comcast.viper.flume2storm.connection.parameters.ConnectionParametersFactory;
+import com.comcast.viper.flume2storm.connection.sender.EventSenderFactory;
+import com.comcast.viper.flume2storm.location.LocationServiceFactory;
+import com.comcast.viper.flume2storm.location.ServiceProviderSerialization;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 
@@ -35,21 +32,37 @@ import com.google.common.base.Supplier;
  * Configuration for {@link StormSink}
  */
 public class StormSinkConfiguration implements Supplier<Configuration> {
+  /** Configuration attribute name for {@link #getBatchSize()} */
   public static final String BATCH_SIZE = "batch-size";
+  /** Default value for {@value #BATCH_SIZE} */
   public static final int BATCH_SIZE_DEFAULT = 100;
-  public static final String TIMESTAMP_HEADER = "timestamp.header";
-  public static final String TIMESTAMP_HEADER_DEFAULT = "timestamp";
+  /**
+   * Configuration attribute name for
+   * {@link #getLocationServiceFactoryClassName()}
+   */
   public static final String LOCATION_SERVICE_FACTORY_CLASS = "location.service.factory";
+  /** Default value for {@value #LOCATION_SERVICE_FACTORY_CLASS} */
   public static final String LOCATION_SERVICE_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.location.DynamicLocationServiceFactory";
+  /**
+   * Configuration attribute name for
+   * {@link #getServiceProviderSerializationClassName()}
+   */
   public static final String SERVICE_PROVIDER_SERIALIZATION_CLASS = "service.provider.serialization";
+  /** Default value for {@value #SERVICE_PROVIDER_SERIALIZATION_CLASS} */
   public static final String SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT = "com.comcast.viper.flume2storm.location.KryoNetServiceProviderSerialization";
-  public static final String EVENT_SENDER_FACTORY_CLASS = "event.receptor.factory";
-  public static final String EVENT_SENDER_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.receptor.KryoNetEventReceptorFactory";
+  /** Configuration attribute name for {@link #getEventSenderFactoryClassName()} */
+  public static final String EVENT_SENDER_FACTORY_CLASS = "event.sender.factory";
+  /** Default value for {@value #EVENT_SENDER_FACTORY_CLASS} */
+  public static final String EVENT_SENDER_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.connection.sender.KryoNetEventSenderFactory";
+  /**
+   * Configuration attribute name for
+   * {@link #getConnectionParametersFactoryClassName()}
+   */
   public static final String CONNECTION_PARAMETERS_FACTORY_CLASS = "connection.parameters.factory";
-  public static final String CONNECTION_PARAMETERS_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.connection.KryoNetConnectionParametersFactory";
+  /** Default value for {@value #CONNECTION_PARAMETERS_FACTORY_CLASS} */
+  public static final String CONNECTION_PARAMETERS_FACTORY_CLASS_DEFAULT = "com.comcast.viper.flume2storm.connection.parameters.KryoNetConnectionParametersFactory";
 
   protected int batchSize;
-  protected String timestampHeader;
   protected String locationServiceFactoryClassName;
   protected String serviceProviderSerializationClassName;
   protected String eventSenderFactoryClassName;
@@ -57,54 +70,43 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   protected Configuration configuration;
 
   /**
-   * Builds a new {@link StormSinkConfiguration} based on a Configuration
-   * 
    * @param config
    *          The configuration to use
+   * @return The newly built {@link StormSinkConfiguration} based on the
+   *         configuration specified
    * @throws F2SConfigurationException
-   *           If the class is not found in the class path
+   *           If the configuration is invalid
    */
   public static StormSinkConfiguration from(Configuration config) throws F2SConfigurationException {
     StormSinkConfiguration result = new StormSinkConfiguration();
     try {
       result.setBatchSize(config.getInteger(BATCH_SIZE, BATCH_SIZE_DEFAULT));
-    } catch (IllegalArgumentException e) {
-      // throw F2SConfigurationException.with(BATCH_SIZE, batchSize,
-      // Reason.NOT_STRICLY_POSITIVE);
     } catch (Exception e) {
-      // TODO finish exception handling
+      throw F2SConfigurationException.with(config, BATCH_SIZE, e);
     }
     try {
-      result.setTimestampHeader(config.getString(TIMESTAMP_HEADER, TIMESTAMP_HEADER_DEFAULT));
-    } catch (IllegalArgumentException e) {
-      // throw F2SConfigurationException.with(BATCH_SIZE, batchSize,
-      // Reason.NOT_STRICLY_POSITIVE);
+      result.setLocationServiceFactoryClassName(config.getString(LOCATION_SERVICE_FACTORY_CLASS,
+          LOCATION_SERVICE_FACTORY_CLASS_DEFAULT));
     } catch (Exception e) {
-      // TODO finish exception handling
+      throw F2SConfigurationException.with(config, LOCATION_SERVICE_FACTORY_CLASS, e);
     }
-    String className = config.getString(LOCATION_SERVICE_FACTORY_CLASS, LOCATION_SERVICE_FACTORY_CLASS_DEFAULT);
     try {
-      result.setLocationServiceFactoryClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(LOCATION_SERVICE_FACTORY_CLASS, className, e);
+      result.setServiceProviderSerializationClassName(config.getString(SERVICE_PROVIDER_SERIALIZATION_CLASS,
+          SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, SERVICE_PROVIDER_SERIALIZATION_CLASS, e);
     }
-    className = config.getString(SERVICE_PROVIDER_SERIALIZATION_CLASS, SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT);
     try {
-      result.setServiceProviderSerializationClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(SERVICE_PROVIDER_SERIALIZATION_CLASS, className, e);
+      result.setEventSenderFactoryClassName(config.getString(EVENT_SENDER_FACTORY_CLASS,
+          EVENT_SENDER_FACTORY_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, EVENT_SENDER_FACTORY_CLASS, e);
     }
-    className = config.getString(EVENT_SENDER_FACTORY_CLASS, EVENT_SENDER_FACTORY_CLASS_DEFAULT);
     try {
-      result.setEventSenderFactoryClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(EVENT_SENDER_FACTORY_CLASS, className, e);
-    }
-    className = config.getString(CONNECTION_PARAMETERS_FACTORY_CLASS, CONNECTION_PARAMETERS_FACTORY_CLASS_DEFAULT);
-    try {
-      result.setConnectionParametersFactoryClassName(className);
-    } catch (ClassNotFoundException e) {
-      throw F2SConfigurationException.with(CONNECTION_PARAMETERS_FACTORY_CLASS, className, e);
+      result.setConnectionParametersFactoryClassName(config.getString(CONNECTION_PARAMETERS_FACTORY_CLASS,
+          CONNECTION_PARAMETERS_FACTORY_CLASS_DEFAULT));
+    } catch (Exception e) {
+      throw F2SConfigurationException.with(config, CONNECTION_PARAMETERS_FACTORY_CLASS, e);
     }
     result.configuration = config;
     return result;
@@ -115,12 +117,11 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
    */
   public StormSinkConfiguration() {
     batchSize = BATCH_SIZE_DEFAULT;
-    timestampHeader = TIMESTAMP_HEADER_DEFAULT;
     locationServiceFactoryClassName = LOCATION_SERVICE_FACTORY_CLASS_DEFAULT;
     serviceProviderSerializationClassName = SERVICE_PROVIDER_SERIALIZATION_CLASS_DEFAULT;
     connectionParametersFactoryClassName = CONNECTION_PARAMETERS_FACTORY_CLASS_DEFAULT;
     eventSenderFactoryClassName = EVENT_SENDER_FACTORY_CLASS_DEFAULT;
-    configuration = new MapConfiguration(new HashMap<String, Object>());
+    configuration = new BaseConfiguration();
   }
 
   /**
@@ -131,7 +132,6 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
    */
   public StormSinkConfiguration(final StormSinkConfiguration other) {
     batchSize = other.batchSize;
-    timestampHeader = other.timestampHeader;
     locationServiceFactoryClassName = other.locationServiceFactoryClassName;
     serviceProviderSerializationClassName = other.serviceProviderSerializationClassName;
     connectionParametersFactoryClassName = other.connectionParametersFactoryClassName;
@@ -149,29 +149,10 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   /**
    * @param batchSize
    *          See {@link #getBatchSize()}
-   * @throws F2SConfigurationException
-   *           If the batch size is not stricly positive
    */
-  public void setBatchSize(int batchSize) throws F2SConfigurationException {
-    Preconditions.checkArgument(batchSize > 0);
+  public void setBatchSize(int batchSize) {
+    Preconditions.checkArgument(batchSize > 0, "Batch-size must be strictly positive");
     this.batchSize = batchSize;
-  }
-
-  /**
-   * @return The name of the header that contains the timestamp of the event
-   */
-  public String getTimestampHeader() {
-    return timestampHeader;
-  }
-
-  /**
-   * @param timestampHeader
-   *          See {@link #getTimestampHeader()}
-   */
-  public void setTimestampHeader(String timestampHeader) {
-    if (timestampHeader.length() == 0)
-
-      this.timestampHeader = timestampHeader;
   }
 
   /**
@@ -182,14 +163,16 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   }
 
   /**
-   * @param locationServiceFactoryClass
+   * @param locationServiceFactoryClassName
    *          See {@link #getLocationServiceFactoryClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setLocationServiceFactoryClassName(String locationServiceFactoryClass) throws ClassNotFoundException {
-    Class.forName(locationServiceFactoryClass);
-    this.locationServiceFactoryClassName = locationServiceFactoryClass;
+  public void setLocationServiceFactoryClassName(String locationServiceFactoryClassName) throws ClassNotFoundException {
+    Class<?> locationServiceFactoryClass = Class.forName(locationServiceFactoryClassName);
+    Preconditions.checkArgument(LocationServiceFactory.class.isAssignableFrom(locationServiceFactoryClass),
+        "The class must implement " + LocationServiceFactory.class.getCanonicalName());
+    this.locationServiceFactoryClassName = locationServiceFactoryClassName;
   }
 
   /**
@@ -200,15 +183,17 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   }
 
   /**
-   * @param serviceProviderSerializationClass
+   * @param serviceProviderSerializationClassName
    *          See {@link #getServiceProviderSerializationClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setServiceProviderSerializationClassName(String serviceProviderSerializationClass)
+  public void setServiceProviderSerializationClassName(String serviceProviderSerializationClassName)
       throws ClassNotFoundException {
-    Class.forName(serviceProviderSerializationClass);
-    this.serviceProviderSerializationClassName = serviceProviderSerializationClass;
+    Class<?> serviceProviderSerializationClass = Class.forName(serviceProviderSerializationClassName);
+    Preconditions.checkArgument(ServiceProviderSerialization.class.isAssignableFrom(serviceProviderSerializationClass),
+        "The class must implement " + ServiceProviderSerialization.class.getCanonicalName());
+    this.serviceProviderSerializationClassName = serviceProviderSerializationClassName;
   }
 
   /**
@@ -219,14 +204,16 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   }
 
   /**
-   * @param eventSenderFactory
+   * @param eventSenderFactoryClassName
    *          See {@link #getEventSenderFactoryClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setEventSenderFactoryClassName(String eventSenderFactory) throws ClassNotFoundException {
-    Class.forName(eventSenderFactory);
-    this.eventSenderFactoryClassName = eventSenderFactory;
+  public void setEventSenderFactoryClassName(String eventSenderFactoryClassName) throws ClassNotFoundException {
+    Class<?> eventSenderFactoryClass = Class.forName(eventSenderFactoryClassName);
+    Preconditions.checkArgument(EventSenderFactory.class.isAssignableFrom(eventSenderFactoryClass),
+        "The class must implement " + EventSenderFactory.class.getCanonicalName());
+    this.eventSenderFactoryClassName = eventSenderFactoryClassName;
   }
 
   /**
@@ -237,14 +224,17 @@ public class StormSinkConfiguration implements Supplier<Configuration> {
   }
 
   /**
-   * @param eventSenderFactory
+   * @param connectionParametersFactoryClassName
    *          See {@link #getConnectionParametersFactoryClassName()}
    * @throws ClassNotFoundException
    *           If the class specified is not found in the classpath
    */
-  public void setConnectionParametersFactoryClassName(String eventSenderFactory) throws ClassNotFoundException {
-    Class.forName(eventSenderFactory);
-    this.connectionParametersFactoryClassName = eventSenderFactory;
+  public void setConnectionParametersFactoryClassName(String connectionParametersFactoryClassName)
+      throws ClassNotFoundException {
+    Class<?> connectionParametersFactoryClass = Class.forName(connectionParametersFactoryClassName);
+    Preconditions.checkArgument(ConnectionParametersFactory.class.isAssignableFrom(connectionParametersFactoryClass),
+        "The class must implement " + ConnectionParametersFactory.class.getCanonicalName());
+    this.connectionParametersFactoryClassName = connectionParametersFactoryClassName;
   }
 
   /**

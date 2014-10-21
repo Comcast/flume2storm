@@ -38,10 +38,8 @@ public class TestServiceProviderManager {
     // New empty list
     List<SimpleServiceProvider> providers = new ArrayList<SimpleServiceProvider>();
     manager.set(providers);
-    Assert.assertTrue(listener.getLastAdded()
-        .isEmpty());
-    Assert.assertTrue(listener.getLastRemoved()
-        .isEmpty());
+    Assert.assertTrue(listener.getLastAdded().isEmpty());
+    Assert.assertTrue(listener.getLastRemoved().isEmpty());
 
     // Adding a few
     SimpleServiceProvider ssp1 = new SimpleServiceProvider("host1", 1234);
@@ -52,16 +50,11 @@ public class TestServiceProviderManager {
     providers.add(ssp3);
     listener.clear();
     manager.set(providers);
-    Assert.assertEquals(3, listener.getLastAdded()
-        .size());
-    Assert.assertTrue(listener.getLastAdded()
-        .contains(ssp1));
-    Assert.assertTrue(listener.getLastAdded()
-        .contains(ssp2));
-    Assert.assertTrue(listener.getLastAdded()
-        .contains(ssp3));
-    Assert.assertTrue(listener.getLastRemoved()
-        .isEmpty());
+    Assert.assertEquals(3, listener.getLastAdded().size());
+    Assert.assertTrue(listener.getLastAdded().contains(ssp1));
+    Assert.assertTrue(listener.getLastAdded().contains(ssp2));
+    Assert.assertTrue(listener.getLastAdded().contains(ssp3));
+    Assert.assertTrue(listener.getLastRemoved().isEmpty());
 
     // Adding one, removing 2
     SimpleServiceProvider ssp4 = new SimpleServiceProvider("host4", 1234);
@@ -70,15 +63,10 @@ public class TestServiceProviderManager {
     providers.remove(ssp2);
     listener.clear();
     manager.set(providers);
-    Assert.assertEquals(1, listener.getLastAdded()
-        .size());
-    Assert.assertTrue(listener.getLastAdded()
-        .contains(ssp4));
-    Assert.assertEquals(2, listener.getLastRemoved()
-        .size());
-    Assert.assertTrue(listener.getLastRemoved()
-        .contains(ssp1));
-    Assert.assertTrue(listener.getLastRemoved()
-        .contains(ssp2));
+    Assert.assertEquals(1, listener.getLastAdded().size());
+    Assert.assertTrue(listener.getLastAdded().contains(ssp4));
+    Assert.assertEquals(2, listener.getLastRemoved().size());
+    Assert.assertTrue(listener.getLastRemoved().contains(ssp1));
+    Assert.assertTrue(listener.getLastRemoved().contains(ssp2));
   }
 }

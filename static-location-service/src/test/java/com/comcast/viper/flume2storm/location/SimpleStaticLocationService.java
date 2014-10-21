@@ -17,24 +17,21 @@ package com.comcast.viper.flume2storm.location;
 
 import org.apache.commons.configuration.Configuration;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+
 /**
  * A simple implementation of LocationService that stores data in memory for
  * test purpose.
  */
 public class SimpleStaticLocationService extends StaticLocationService<SimpleServiceProvider> {
-	public static final String CONFIG_NAME_SPACE = "simple";
-	private static SimpleStaticLocationService instance;
-
-	public static SimpleStaticLocationService createInstance(Configuration config) {
-		instance = new SimpleStaticLocationService(config);
-		return instance;
-	}
-
-	public static SimpleStaticLocationService getInstance() {
-		return instance;
-	}
-
-	private SimpleStaticLocationService(Configuration config) {
-		super(new SimpleServiceProviderConfigurationLoader(), config, CONFIG_NAME_SPACE, new SimpleServiceProviderSerialization());
-	}
+  /**
+   * @param config
+   *          A configuration containing both the StaticLocationService
+   *          configuration and the service provider declarations
+   * @throws F2SConfigurationException
+   *           If the configuration is invalid
+   */
+  public SimpleStaticLocationService(Configuration config) throws F2SConfigurationException {
+    super(config, new SimpleServiceProviderSerialization());
+  }
 }

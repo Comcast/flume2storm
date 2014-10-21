@@ -20,15 +20,17 @@ import org.apache.commons.configuration.Configuration;
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 
 /**
- * Implementation of the Connection Parameters factory for test purpose
+ * Implementation of the {@link ConnectionParametersFactory} for test purpose
  */
 public class SimpleConnectionParametersFactory implements ConnectionParametersFactory<SimpleConnectionParameters> {
+  /** Configuration attribute base name */
+  public static final String CONFIG_BASE_NAME = "connection";
 
   /**
    * @see com.comcast.viper.flume2storm.connection.parameters.ConnectionParametersFactory#create(org.apache.commons.configuration.Configuration)
    */
   @Override
   public SimpleConnectionParameters create(Configuration config) throws F2SConfigurationException {
-    return SimpleConnectionParameters.from(config);
+    return SimpleConnectionParameters.from(config.subset(CONFIG_BASE_NAME));
   }
 }

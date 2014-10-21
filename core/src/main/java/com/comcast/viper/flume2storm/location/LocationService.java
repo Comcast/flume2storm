@@ -62,7 +62,24 @@ public interface LocationService<SP extends ServiceProvider<?>> {
   List<SP> getServiceProviders();
 
   /**
-   * Adds the specified listener
+   * @param serviceProvider
+   *          A {@link ServiceProvider}
+   * @return True if the specified {@link ServiceProvider} is registered, false
+   *         otherwise
+   */
+  boolean containsServiceProvider(SP serviceProvider);
+
+  /**
+   * @param serviceProviderId
+   *          A {@link ServiceProvider} identifier
+   * @return True if the {@link ServiceProvider} identified with the specified
+   *         string is registered, false otherwise
+   */
+  boolean containsServiceProvider(String serviceProviderId);
+
+  /**
+   * Adds the specified listener. Upon addition, the listener receives a
+   * notification for all the {@link ServiceProvider} currently registered
    * 
    * @param serviceListener
    *          A {@link ServiceListener} for the specific type of

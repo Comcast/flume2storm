@@ -24,6 +24,8 @@ import org.apache.flume.Channel;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
+import org.apache.flume.SinkProcessor;
+import org.apache.flume.SinkRunner;
 import org.apache.flume.channel.PseudoTxnMemoryChannel;
 import org.apache.flume.conf.Configurables;
 import org.apache.flume.event.EventBuilder;
@@ -35,14 +37,17 @@ import org.junit.Test;
 
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
+import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParametersFactory;
 import com.comcast.viper.flume2storm.connection.receptor.EventReceptor;
 import com.comcast.viper.flume2storm.connection.receptor.EventReceptorTestUtils;
 import com.comcast.viper.flume2storm.connection.receptor.SimpleEventReceptor;
 import com.comcast.viper.flume2storm.connection.sender.SimpleEventSender;
+import com.comcast.viper.flume2storm.connection.sender.SimpleEventSenderFactory;
 import com.comcast.viper.flume2storm.event.F2SEvent;
 import com.comcast.viper.flume2storm.location.LocationService;
 import com.comcast.viper.flume2storm.location.SimpleLocationServiceFactory;
 import com.comcast.viper.flume2storm.location.SimpleServiceProvider;
+import com.comcast.viper.flume2storm.location.SimpleServiceProviderSerialization;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
 import com.google.common.collect.ImmutableMap;
@@ -58,13 +63,13 @@ public class StormSinkTest {
     // Storm sink configuration
     stormSinkConfig = new MapConfiguration(new HashMap<String, Object>());
     stormSinkConfig.addProperty(StormSinkConfiguration.LOCATION_SERVICE_FACTORY_CLASS,
-        "com.comcast.viper.flume2storm.location.SimpleLocationServiceFactory");
+        SimpleLocationServiceFactory.class.getName());
     stormSinkConfig.addProperty(StormSinkConfiguration.SERVICE_PROVIDER_SERIALIZATION_CLASS,
-        "com.comcast.viper.flume2storm.location.SimpleServiceProviderSerialization");
+        SimpleServiceProviderSerialization.class.getName());
     stormSinkConfig.addProperty(StormSinkConfiguration.EVENT_SENDER_FACTORY_CLASS,
-        "com.comcast.viper.flume2storm.connection.sender.SimpleEventSenderFactory");
+        SimpleEventSenderFactory.class.getName());
     stormSinkConfig.addProperty(StormSinkConfiguration.CONNECTION_PARAMETERS_FACTORY_CLASS,
-        "com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParametersFactory");
+        SimpleConnectionParametersFactory.class.getName());
   }
 
   @Before
@@ -109,6 +114,8 @@ public class StormSinkTest {
       channel.put(EventBuilder.withBody(("Test queued" + i).getBytes()));
     }
     sink.process();
+
+    SinkRunner sinkRunner = new SinkRunner();
 
     // Adding a couple of receptors
     SimpleEventReceptor eventReceptor1 = new SimpleEventReceptor(connectionParams);

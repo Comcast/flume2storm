@@ -18,9 +18,16 @@ package com.comcast.viper.flume2storm.connection.receptor;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
 
+/**
+ * Utilities to facilitate testing of an {@link EventReceptor}
+ */
 public class EventReceptorTestUtils {
+  protected static final int TIMEOUT_DEFAULT = 500;
 
-  public static class EventReceptorConnected implements TestCondition {
+  /**
+   * Condition fulfilled when the {@link EventReceptor} is connected
+   */
+  static class EventReceptorConnected implements TestCondition {
     private final EventReceptor<?> eventReceptor;
 
     public EventReceptorConnected(EventReceptor<?> eventReceptor) {
@@ -29,11 +36,14 @@ public class EventReceptorTestUtils {
 
     @Override
     public boolean evaluate() {
-      return eventReceptor.isConnected();
+      return eventReceptor.getStats().isConnected();
     }
   }
 
-  public static class EventReceptorDisconnected implements TestCondition {
+  /**
+   * Condition fulfilled when the {@link EventReceptor} is disconnected
+   */
+  static class EventReceptorDisconnected implements TestCondition {
     private final EventReceptor<?> eventReceptor;
 
     public EventReceptorDisconnected(EventReceptor<?> eventReceptor) {
@@ -42,27 +52,68 @@ public class EventReceptorTestUtils {
 
     @Override
     public boolean evaluate() {
-      return !eventReceptor.isConnected();
+      return !eventReceptor.getStats().isConnected();
     }
   }
 
+  /**
+   * Waits until the specified {@link EventReceptor} is connected. It throws an
+   * assertion failure otherwise
+   * 
+   * @param eventReceptor
+   *          The event receptor
+   * @param timeout
+   *          The maximum number of milliseconds to wait
+   * @throws InterruptedException
+   *           If interrupted while waiting
+   */
   public static void waitConnected(EventReceptor<?> eventReceptor, int timeout) throws InterruptedException {
     if (!TestUtils.waitFor(new EventReceptorConnected(eventReceptor), timeout)) {
       throw new AssertionError("EventReceptor not connected after " + timeout + " ms");
     }
   }
 
+  /**
+   * Waits until the specified {@link EventReceptor} is connected with a timeout
+   * of {@value #TIMEOUT_DEFAULT}. It throws an assertion failure otherwise
+   * 
+   * @param eventReceptor
+   *          The event receptor
+   * @throws InterruptedException
+   *           If interrupted while waiting
+   */
   public static void waitConnected(EventReceptor<?> eventReceptor) throws InterruptedException {
-    waitConnected(eventReceptor, 500);
+    waitConnected(eventReceptor, TIMEOUT_DEFAULT);
   }
 
+  /**
+   * Waits until the specified {@link EventReceptor} is disconnected. It throws
+   * an assertion failure otherwise
+   * 
+   * @param eventReceptor
+   *          The event receptor
+   * @param timeout
+   *          The maximum number of milliseconds to wait
+   * @throws InterruptedException
+   *           If interrupted while waiting
+   */
   public static void waitDisconnected(EventReceptor<?> eventReceptor, int timeout) throws InterruptedException {
     if (!TestUtils.waitFor(new EventReceptorDisconnected(eventReceptor), timeout)) {
       throw new AssertionError("EventReceptor not disconnected after " + timeout + " ms");
     }
   }
 
+  /**
+   * Waits until the specified {@link EventReceptor} is disconnected with a
+   * timeout of {@value #TIMEOUT_DEFAULT}. It throws an assertion failure
+   * otherwise
+   * 
+   * @param eventReceptor
+   *          The event receptor
+   * @throws InterruptedException
+   *           If interrupted while waiting
+   */
   public static void waitDisconnected(EventReceptor<?> eventReceptor) throws InterruptedException {
-    waitDisconnected(eventReceptor, 500);
+    waitDisconnected(eventReceptor, TIMEOUT_DEFAULT);
   }
 }

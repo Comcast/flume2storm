@@ -25,12 +25,34 @@ package com.comcast.viper.flume2storm.utility.circular;
  *          Type of the items in the list
  */
 public interface CircularList<T> {
-  void add(final T toAdd);
+  /**
+   * Adds an element to the list
+   * 
+   * @param toAdd
+   *          The element to add
+   * @return True if the element was successfully added to the list, false
+   *         otherwise
+   */
+  boolean add(final T toAdd);
 
-  void remove(final T toRemove);
+  /**
+   * Removes an element from the list
+   * 
+   * @param toRemove
+   *          The element to remove
+   * @return True if the element was successfully removed to the list, false
+   *         otherwise
+   */
+  boolean remove(final T toRemove);
 
+  /**
+   * @return True if the list is empty, false ottherwise
+   */
   boolean isEmpty();
 
+  /**
+   * @return The number of (distinct) elements in the list
+   */
   int size();
 
   /**

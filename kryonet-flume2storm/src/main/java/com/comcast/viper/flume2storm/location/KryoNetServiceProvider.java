@@ -18,8 +18,9 @@ package com.comcast.viper.flume2storm.location;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
-import com.comcast.viper.flume2storm.connection.KryoNetConnectionParameters;
+import com.comcast.viper.flume2storm.connection.parameters.KryoNetConnectionParameters;
 
 /**
  * Implementation of {@link ServiceProvider} for KryoNet
@@ -43,15 +44,6 @@ public class KryoNetServiceProvider implements ServiceProvider<KryoNetConnection
   }
 
   /**
-   * @see com.comcast.viper.flume2storm.location.ServiceProvider#getId()
-   */
-  @Override
-  public String getId() {
-    return new StringBuilder().append(connectionParameters.getServerAddress()).append(":")
-        .append(connectionParameters.getServerPort()).toString();
-  }
-
-  /**
    * @see com.comcast.viper.flume2storm.location.ServiceProvider#getConnectionParameters()
    */
   public KryoNetConnectionParameters getConnectionParameters() {
@@ -63,11 +55,11 @@ public class KryoNetServiceProvider implements ServiceProvider<KryoNetConnection
    */
   @Override
   public int compareTo(ServiceProvider<KryoNetConnectionParameters> o) {
-    int res = connectionParameters.getServerAddress().compareTo(o.getConnectionParameters().getServerAddress());
+    int res = connectionParameters.getAddress().compareTo(o.getConnectionParameters().getAddress());
     if (res != 0)
       return res;
-    int thisPort = connectionParameters.getServerPort();
-    int otherPort = o.getConnectionParameters().getServerPort();
+    int thisPort = connectionParameters.getPort();
+    int otherPort = o.getConnectionParameters().getPort();
     return (thisPort < otherPort ? -1 : (thisPort == otherPort ? 0 : 1));
   }
 
@@ -99,7 +91,6 @@ public class KryoNetServiceProvider implements ServiceProvider<KryoNetConnection
    */
   @Override
   public String toString() {
-    return new ToStringBuilder("KryoNetServiceProvider").append("connectionParameters", connectionParameters)
-        .toString();
+    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append(connectionParameters).toString();
   }
 }

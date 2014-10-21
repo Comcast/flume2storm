@@ -19,15 +19,15 @@ import org.apache.commons.configuration.Configuration;
 
 import com.comcast.viper.flume2storm.F2SConfigurationException;
 import com.comcast.viper.flume2storm.connection.parameters.SimpleConnectionParameters;
-import com.comcast.viper.flume2storm.connection.sender.EventSender;
-import com.comcast.viper.flume2storm.connection.sender.EventSenderFactory;
-import com.comcast.viper.flume2storm.connection.sender.SimpleEventSender;
 
 /**
- * Implementation of the {@link EventReceptor} factory for test purpose
+ * Implementation of the {@link EventReceptorFactory} for test purpose
  */
 public class SimpleEventReceptorFactory implements EventReceptorFactory<SimpleConnectionParameters> {
-
+  /**
+   * @see com.comcast.viper.flume2storm.connection.receptor.EventReceptorFactory#create(com.comcast.viper.flume2storm.connection.parameters.ConnectionParameters,
+   *      org.apache.commons.configuration.Configuration)
+   */
   @Override
   public EventReceptor<SimpleConnectionParameters> create(SimpleConnectionParameters connectionParams,
       Configuration config) throws F2SConfigurationException {

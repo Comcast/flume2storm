@@ -17,27 +17,25 @@ package com.comcast.viper.flume2storm.location;
 
 import org.apache.commons.configuration.Configuration;
 
+import com.comcast.viper.flume2storm.F2SConfigurationException;
+
+/**
+ * Factory class for {@link StaticLocationService}
+ * 
+ * @param <SP>
+ *          The actual class for the ServiceProvider
+ */
 public class StaticLocationServiceFactory<SP extends ServiceProvider<?>> implements LocationServiceFactory<SP> {
-	private static final long serialVersionUID = 7909932999332288419L;
+  /** Configuration attribute base name */
+  public static final String CONFIG_BASE_NAME = "static.location.service";
 
-	public static final String CONFIG_BASE_NAME = "dynamic.location.service";
-
-	private ServiceProviderConfigurationLoader<SP> spConfigLoader;
-
-	/**
-	 * @param spConfigLoader
-	 *            the configuration loader for service providers
-	 */
-	public StaticLocationServiceFactory(ServiceProviderConfigurationLoader<SP> spConfigLoader) {
-		this.spConfigLoader = spConfigLoader;
-	}
-
-	/**
-	 * @see com.comcast.viper.flume2storm.location.LocationServiceFactory#create(org.apache.commons.configuration.Configuration,
-	 *      com.comcast.viper.flume2storm.location.ServiceProviderSerialization)
-	 */
-	@Override
-	public LocationService<SP> create(Configuration config, ServiceProviderSerialization<SP> serviceProviderSerialization) {
-		return new StaticLocationService<SP>(spConfigLoader, config, "", serviceProviderSerialization);
-	}
+  /**
+   * @see com.comcast.viper.flume2storm.location.LocationServiceFactory#create(org.apache.commons.configuration.Configuration,
+   *      com.comcast.viper.flume2storm.location.ServiceProviderSerialization)
+   */
+  @Override
+  public LocationService<SP> create(Configuration config, ServiceProviderSerialization<SP> serviceProviderSerialization)
+      throws F2SConfigurationException {
+    return new StaticLocationService<SP>(config.subset(CONFIG_BASE_NAME), serviceProviderSerialization);
+  }
 }

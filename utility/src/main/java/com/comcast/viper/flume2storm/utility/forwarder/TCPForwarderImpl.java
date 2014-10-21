@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Simple implementation of the {@link TCPForwarder} based on Java NIO library
@@ -48,12 +49,12 @@ class TCPForwarderImpl implements TCPForwarder {
   private static final long TERMINATION_TIMEOUT = 10000;
   private static final int MAX_TCP_PACKET_SIZE = 64 * 1024;
 
-  private final TCPForwarderConfig configuration;
-  private final AtomicReference<MyState> state;
-  private MainThread mainThread;
-  private final AtomicInteger connectionDelay;
-  private final AtomicInteger clientSendDelay;
-  private final AtomicInteger serverSendDelay;
+  final TCPForwarderConfig configuration;
+  final AtomicReference<MyState> state;
+  MainThread mainThread;
+  final AtomicInteger connectionDelay;
+  final AtomicInteger clientSendDelay;
+  final AtomicInteger serverSendDelay;
 
   enum MyState {
     STOPPED,
@@ -64,7 +65,7 @@ class TCPForwarderImpl implements TCPForwarder {
   }
 
   class MainThread extends Thread {
-    private final ExecutorService executor;
+    final ExecutorService executor;
     private final ConcurrentLinkedQueue<SocketForwarder> socketForwarders;
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
@@ -76,7 +77,7 @@ class TCPForwarderImpl implements TCPForwarder {
       socketForwarders = new ConcurrentLinkedQueue<SocketForwarder>();
     }
 
-    private void wakeup() {
+    protected void wakeup() {
       if (selector != null)
         selector.wakeup();
     }
@@ -201,6 +202,7 @@ class TCPForwarderImpl implements TCPForwarder {
       LOG.debug("Executor terminated");
     }
 
+    @SuppressWarnings("resource")
     private void handleConnection(final SelectionKey sk) {
       // Delay while connecting
       final int d = connectionDelay.get();
@@ -289,7 +291,7 @@ class TCPForwarderImpl implements TCPForwarder {
     OUTGOING
   }
 
-  private static String getFullAddress(final SocketChannel channel, final Direction direction) {
+  protected static String getFullAddress(final SocketChannel channel, final Direction direction) {
     try {
       String origin, destination;
       if (direction == Direction.INCOMING) {
@@ -310,9 +312,8 @@ class TCPForwarderImpl implements TCPForwarder {
    * to it
    */
   class SocketForwarder implements Runnable {
-    private final Logger log;
-    private final Selector selector;
-    private final SocketChannel socketChannel;
+    final Selector selector;
+    final SocketChannel socketChannel;
     private final AtomicReference<SocketForwarder> boundTo;
     private final AtomicInteger delay;
     private final AtomicBoolean terminate;
@@ -320,7 +321,7 @@ class TCPForwarderImpl implements TCPForwarder {
 
     public SocketForwarder(final SocketChannel socketChannel, final Direction type) throws IOException {
       assert socketChannel != null;
-      log = LoggerFactory.getLogger(SocketForwarder.class + "." + getFullAddress(socketChannel, type));
+      MDC.put("ip", getFullAddress(socketChannel, type));
       selector = SelectorProvider.provider().openSelector();
       this.socketChannel = socketChannel;
       this.delay = type == Direction.INCOMING ? clientSendDelay : serverSendDelay;
@@ -358,7 +359,7 @@ class TCPForwarderImpl implements TCPForwarder {
               try {
                 Thread.sleep(100);
               } catch (final InterruptedException e) {
-                log.debug("Interrupted");
+                LOG.debug("Interrupted");
               }
               break;
 
@@ -368,18 +369,18 @@ class TCPForwarderImpl implements TCPForwarder {
               break;
 
             case STARTED:
-              log.trace("Waiting for socket event....");
+              LOG.trace("Waiting for socket event....");
               int nbKeys = selector.select(50);
               if (nbKeys == 0) {
-                log.trace("Forwarder has no keys... continuing");
+                LOG.trace("Forwarder has no keys... continuing");
               } else {
-                log.trace("Processing potential socket event...");
+                LOG.trace("Processing potential socket event...");
                 final Iterator<SelectionKey> i = selector.selectedKeys().iterator();
                 while (i.hasNext()) {
                   final SelectionKey sk = i.next();
                   i.remove();
                   if (!sk.isValid()) {
-                    log.warn("Skipping invalid selection key");
+                    LOG.warn("Skipping invalid selection key");
                   } else if (sk.isReadable()) {
                     doRead(sk);
                   }
@@ -396,10 +397,10 @@ class TCPForwarderImpl implements TCPForwarder {
           }
         }
       } catch (final Exception e) {
-        log.error("Processing exception: " + e.getMessage(), e);
+        LOG.error("Processing exception: " + e.getMessage(), e);
       } finally {
         close();
-        log.info("Task terminated");
+        LOG.info("Task terminated");
       }
     }
 
@@ -415,7 +416,7 @@ class TCPForwarderImpl implements TCPForwarder {
           }
         }
       } catch (final Exception e) {
-        log.error("Failed to read socket: " + e.getMessage(), e);
+        LOG.error("Failed to read socket: " + e.getMessage(), e);
       }
     }
 
@@ -436,7 +437,7 @@ class TCPForwarderImpl implements TCPForwarder {
               selector.wakeup();
             }
           } catch (final Exception e) {
-            log.error("Failed to send data: " + e.getMessage(), e);
+            LOG.error("Failed to send data: " + e.getMessage(), e);
           }
         }
       });
@@ -445,17 +446,17 @@ class TCPForwarderImpl implements TCPForwarder {
     protected void disconnect() {
       terminate.set(true);
       // Closing socket
-      log.debug("Socket {} disconnected. Closing channel", getFullAddress(socketChannel, direction));
+      LOG.debug("Socket {} disconnected. Closing channel", getFullAddress(socketChannel, direction));
       try {
         socketChannel.close();
-        log.info("Channel for socket {} closed", socketChannel.socket().getRemoteSocketAddress());
+        LOG.info("Channel for socket {} closed", socketChannel.socket().getRemoteSocketAddress());
       } catch (final Exception e) {
-        log.error("Failed to close channel for socket {}: {}", getFullAddress(socketChannel, direction), e.getMessage());
+        LOG.error("Failed to close channel for socket {}: {}", getFullAddress(socketChannel, direction), e.getMessage());
       }
     }
 
     private void close() {
-      log.debug("Closing...");
+      LOG.debug("Closing...");
       try {
         disconnect();
         final SocketForwarder other = unbind();
@@ -464,12 +465,12 @@ class TCPForwarderImpl implements TCPForwarder {
           other.disconnect();
         }
       } catch (final Exception e) {
-        log.error("Closing SocketForwarder failed: " + e.getMessage(), e);
+        LOG.error("Closing SocketForwarder failed: " + e.getMessage(), e);
       }
       try {
         selector.close();
       } catch (final IOException e) {
-        log.error("Closing selector failed: " + e.getMessage(), e);
+        LOG.error("Closing selector failed: " + e.getMessage(), e);
       }
       mainThread.onSocketForwarderTerminated(this);
     }
@@ -568,7 +569,7 @@ class TCPForwarderImpl implements TCPForwarder {
     }
   }
 
-  private void setState(final MyState newState) {
+  protected void setState(final MyState newState) {
     final MyState oldState = state.getAndSet(newState);
     LOG.debug("State change: {} -> {}", oldState, newState);
   }

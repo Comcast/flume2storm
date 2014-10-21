@@ -24,6 +24,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
 import com.comcast.viper.flume2storm.event.F2SEvent;
+import com.comcast.viper.flume2storm.spout.BasicF2SEventEmitter;
 
 /**
  */
