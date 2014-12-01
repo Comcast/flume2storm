@@ -202,6 +202,11 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.7</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.4</version>
 					<configuration>
@@ -316,6 +321,7 @@
 							<dependencySourceIncludes>
 								<dependencySourceInclude>com.comcast.viper.flume2storm*</dependencySourceInclude>
 							</dependencySourceIncludes>
+							<additionalparam>-Xdoclint:none</additionalparam>
 						</configuration>
 					</execution>
 				</executions>
