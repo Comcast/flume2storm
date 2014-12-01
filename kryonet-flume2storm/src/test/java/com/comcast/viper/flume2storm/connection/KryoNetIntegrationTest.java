@@ -16,10 +16,8 @@
 package com.comcast.viper.flume2storm.connection;
 
 import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.Assert;
 
@@ -28,8 +26,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.comcast.viper.flume2storm.connection.parameters.KryoNetConnectionParameters;
+import com.comcast.viper.flume2storm.connection.receptor.EventReceptorListener;
 import com.comcast.viper.flume2storm.connection.receptor.EventReceptorStats;
 import com.comcast.viper.flume2storm.connection.receptor.KryoNetEventReceptor;
 import com.comcast.viper.flume2storm.connection.sender.EventSenderStats;
@@ -42,13 +43,10 @@ import com.comcast.viper.flume2storm.utility.forwarder.TCPForwarder;
 import com.comcast.viper.flume2storm.utility.forwarder.TCPForwarderBuilder;
 import com.comcast.viper.flume2storm.utility.test.TestCondition;
 import com.comcast.viper.flume2storm.utility.test.TestUtils;
-import com.esotericsoftware.kryonet.Client;
-import com.esotericsoftware.kryonet.Connection;
-import com.esotericsoftware.kryonet.Listener;
-import com.esotericsoftware.kryonet.Server;
 import com.google.common.collect.ImmutableList;
 
 public class KryoNetIntegrationTest {
+  private static final Logger LOG = LoggerFactory.getLogger(KryoNetIntegrationTest.class);
   protected static final int TEST_TO = 1000;
   protected static final int RECONNECTION_TO = 1000;
   protected static KryoNetConnectionParameters connectionParameters;
@@ -339,5 +337,81 @@ public class KryoNetIntegrationTest {
     // Disconnecting client
     receptor.stop();
     forwarder.stop();
+  }
+
+  @Test
+  public void testPerformance() throws Exception {
+    final int testSize = 1000;
+    final KryoNetEventReceptor receptor = new KryoNetEventReceptor(connectionParameters, kryoNetParameters);
+    receptor.addListener(new EventReceptorListener() {
+      @Override
+      public void onEvent(List<F2SEvent> events) {
+        try {
+          Thread.sleep(1);
+        } catch (InterruptedException e) {
+        }
+      }
+
+      @Override
+      public void onDisconnection() {
+      }
+
+      @Override
+      public void onConnection() {
+      }
+    });
+
+    // Creating test event
+    final ImmutableList<F2SEvent> toSend = ImmutableList.of(F2SEventFactory.getInstance().create(
+        RandomStringUtils.random(256)));
+
+    Thread senderThread = new Thread() {
+      @Override
+      public void run() {
+        try {
+          LOG.info("Sender: thread started");
+          KryoNetTestUtil.waitReceptorConnected(receptor, TEST_TO);
+          LOG.info("Sender: connected receptor");
+          for (int i = 1; i <= testSize; i++) {
+            while (sender.send(toSend) == 0) {
+              Thread.sleep(100);
+            }
+            if (i % 100 == 0)
+              LOG.debug("Sender: Sent " + i + " messages");
+          }
+          LOG.info("Sender: thread terminated");
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    };
+
+    Thread receptorThread = new Thread() {
+      @Override
+      public void run() {
+        try {
+          LOG.info("Receptor: thread started");
+          receptor.start();
+          KryoNetTestUtil.waitReceptorConnected(receptor, TEST_TO);
+          LOG.info("Receptor: connected to sender");
+          int nbMsgReceived = 0;
+          while (nbMsgReceived < testSize) {
+            List<F2SEvent> events = receptor.getEvents();
+            nbMsgReceived += events.size();
+            LOG.debug("Receptor: Received " + nbMsgReceived + " messages");
+            Thread.sleep(100);
+          }
+          receptor.stop();
+          LOG.info("Receptor: thread terminated");
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    };
+
+    senderThread.start();
+    receptorThread.start();
+    senderThread.join();
+    receptorThread.join();
   }
 }

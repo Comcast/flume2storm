@@ -121,7 +121,8 @@ public class KryoNetEventSender extends KryoNetServiceProvider implements EventS
     }
     LOG.trace("Starting KryoNet event distributor...");
     setStatus(KryoNetEventSenderStatus.STARTING);
-    senderStrategy = new KryoNetSimpleRealtimeStrategy(this, kryoNetParameters.getMaxRetries());
+    senderStrategy = new KryoNetSimpleRealtimeStrategy(this, kryoNetParameters.getMaxRetries(),
+        connectionParameters.getWriteBufferSize(), connectionParameters.getObjectBufferSize());
     stats.reset();
     try {
       LOG.debug("Creating Kryo server with connection parameters: {}", connectionParameters);

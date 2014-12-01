@@ -40,6 +40,7 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.FrameworkMessage.KeepAlive;
 import com.esotericsoftware.kryonet.Listener;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 /**
  * A Flume2Storm event receptor implementation using KryoNet framework. Note
@@ -52,7 +53,7 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
   protected final KryoNetParameters kryoNetParameters;
   protected final KryoNetConnectionParameters connectionParams;
   protected final EventReceptorStats stats;
-  protected final List<EventReceptorListener> listeners;
+  protected final AtomicReference<ImmutableList<EventReceptorListener>> listeners;
   protected final Queue<F2SEvent> events;
   protected final AtomicBoolean keepRunning;
   protected final AtomicReference<Instant> nextConnectionTime;
@@ -105,7 +106,7 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
     this.kryoNetParameters = kryoNetParams;
     this.connectionParams = connectionParams;
     stats = new EventReceptorStats(connectionParams.getId());
-    listeners = new ArrayList<EventReceptorListener>();
+    listeners = new AtomicReference<>(ImmutableList.copyOf(new ArrayList<EventReceptorListener>()));
     events = new ConcurrentLinkedQueue<F2SEvent>();
     keepRunning = new AtomicBoolean(false);
     nextConnectionTime = new AtomicReference<Instant>(new Instant(0));
@@ -252,10 +253,8 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
     public void connected(final Connection connection) {
       stats.setConnected();
       LOG.info("KryoNet client of {} connected", connectionParams.getConnectionStr());
-      synchronized (this) {
-        for (EventReceptorListener erListener : listeners) {
-          erListener.onConnection();
-        }
+      for (EventReceptorListener erListener : listeners.get()) {
+        erListener.onConnection();
       }
     }
 
@@ -267,10 +266,8 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
       stats.setDisconnected();
       LOG.info("KryoNet client of {} disconnected", connectionParams.getConnectionStr());
       cleanup();
-      synchronized (this) {
-        for (EventReceptorListener erListener : listeners) {
-          erListener.onDisconnection();
-        }
+      for (EventReceptorListener erListener : listeners.get()) {
+        erListener.onDisconnection();
       }
     }
 
@@ -291,6 +288,9 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
           } else {
             stats.incrEventsQueued();
           }
+          for (EventReceptorListener erListener : listeners.get()) {
+            erListener.onEvent(ImmutableList.of(fe));
+          }
         } catch (final ClassCastException cce) {
           LOG.error("KryoNet client of {} received a message of unexpected type: {}",
               connectionParams.getConnectionStr(), object.getClass());
@@ -308,11 +308,15 @@ public class KryoNetEventReceptor implements EventReceptor<KryoNetConnectionPara
   }
 
   public synchronized void addListener(EventReceptorListener listener) {
-    listeners.add(listener);
+    List<EventReceptorListener> newList = new ArrayList<>(listeners.get());
+    newList.add(listener);
+    listeners.set(ImmutableList.copyOf(newList));
   }
 
   public synchronized void removeListener(EventReceptorListener listener) {
-    listeners.remove(listener);
+    List<EventReceptorListener> newList = new ArrayList<>(listeners.get());
+    newList.remove(listener);
+    listeners.set(ImmutableList.copyOf(newList));
   }
 
   /**

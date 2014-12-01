@@ -36,6 +36,8 @@ public class KryoNetSimpleRealtimeStrategy implements KryoNetEventSenderStrategy
   private static final Logger LOG = LoggerFactory.getLogger(KryoNetSimpleRealtimeStrategy.class);
   private final KryoNetEventSender knEventSender;
   private final int maxRetries;
+  private final int writeBufferSize;
+  private final int objectBufferSize;
 
   /**
    * @param knEventSender
@@ -44,10 +46,17 @@ public class KryoNetSimpleRealtimeStrategy implements KryoNetEventSenderStrategy
    * @param maxRetries
    *          The maximum number of times the event sender will attempt to send
    *          an event before giving up
+   * @param writeBufferSize
+   *          KryoNet write buffer size
+   * @param objectBufferSize
+   *          KryoNet object buffer size
    */
-  public KryoNetSimpleRealtimeStrategy(KryoNetEventSender knEventSender, final int maxRetries) {
+  public KryoNetSimpleRealtimeStrategy(KryoNetEventSender knEventSender, final int maxRetries,
+      final int writeBufferSize, final int objectBufferSize) {
     this.knEventSender = knEventSender;
     this.maxRetries = maxRetries;
+    this.writeBufferSize = writeBufferSize;
+    this.objectBufferSize = objectBufferSize;
   }
 
   /**
@@ -81,12 +90,26 @@ public class KryoNetSimpleRealtimeStrategy implements KryoNetEventSenderStrategy
           // No more client
           break;
         }
+        // Verifying that we have enough space in the write buffer to
+        // send the message
+        int bufSz = client.getTcpWriteBufferSize();
+        if (bufSz + objectBufferSize >= writeBufferSize) {
+          LOG.debug("KryoNet write buffer is almost full ({} / {}), not sending message: {}", bufSz, writeBufferSize,
+              eventToSend);
+          retries++;
+          if (retries > maxRetries) {
+            LOG.info("Failed to send {} after {} retries", eventToSend, maxRetries);
+            knEventSender.getStats().incrEventsFailed();
+            eventToSend = null;
+          }
+          continue;
+        }
         LOG.trace("Sending: {} to {}", eventToSend, client);
         if (client.sendTCP(eventToSend) == 0) {
           LOG.debug("Failed to send {} to {}", eventToSend, client);
           retries++;
           if (retries > maxRetries) {
-            LOG.debug("Failed to send {} after {} retries", eventToSend, maxRetries);
+            LOG.info("Failed to send {} after {} retries", eventToSend, maxRetries);
             knEventSender.getStats().incrEventsFailed();
             eventToSend = null;
           }

@@ -65,7 +65,7 @@ public class KryoNetParameters implements Serializable {
    * 
    * @param config
    *          The configuration to use
-   * @return The newly created {@link F2SConfiguration}
+   * @return The newly created {@link KryoNetParameters}
    * @throws F2SConfigurationException
    *           If the configuration specified is invalid
    */
