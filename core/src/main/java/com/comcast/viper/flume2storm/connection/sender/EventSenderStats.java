@@ -26,7 +26,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.google.common.base.Preconditions;
 
 /**
- * Statistics related to the {@link EventSender}
+ * Statistics related to the {@link EventSender}. This class is thread-safe.
  */
 public final class EventSenderStats implements EventSenderStatsMBean {
   protected final String eventSenderId;

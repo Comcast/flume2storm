@@ -26,7 +26,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.comcast.viper.flume2storm.connection.sender.EventSender;
 
 /**
- * Statistics related to the {@link EventReceptor}
+ * Statistics related to the {@link EventReceptor}. This class is thread-safe.
  */
 public final class EventReceptorStats implements EventReceptorStatsMBean {
   protected final String eventSenderId;
