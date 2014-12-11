@@ -1,3 +1,13 @@
+*** Flume2Storm 2.0.1
+
+* Bug Fixes:
+	- GitHub Issue #1: KryoNet EventSender should gracefully handle the case where the write buffer fills up
+	- GitHub Issue #2: When using JDK1.8, the build process fails with error "self-closing element not allowed"
+
+* Components Affected:
+	- kryonet-flume2storm
+
+
 *** Flume2Storm 2.0.0
 
 First open-source release
