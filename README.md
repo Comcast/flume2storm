@@ -1,3 +1,5 @@
+# Important note: this project is no longer actively maintained.
+
 # Flume2Storm Connector
 
 The Flume2Storm Connector is a modular project that bridges [Flume](http://flume.apache.org/) to [Storm](http://storm-project.net/documentation/Home.html), so that Flume events can be forwarded to and processed in Storm. 
